@@ -1,0 +1,28 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "Scrolleo",
+            "database": "streaming_platform",
+            "username": "postgres"
+        },
+        {
+            "pgOptions": {
+                "ssl": {
+                    "rejectUnauthorized": true
+                }
+            },
+            "previewLimit": 50,
+            "server": "dpg-d14klgjipnbc73fglotg-a.frankfurt-postgres.render.com",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "OnlineScrolleo",
+            "username": "brave",
+            "database": "streaming_platform_p3gh",
+            "password": "ADT3oMrICH7TDpyk0VSZOrbaQYLcGmol"
+        }
+    ]
+}

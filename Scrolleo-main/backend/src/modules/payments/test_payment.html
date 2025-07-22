@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Paiement Feexpay</title>
+    <!-- Inclure le SDK Feexpay -->
+    <script src="https://api.feexpay.me/feexpay-javascript-sdk/index.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .payment-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .pack-info {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        #render {
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+        #debug {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .login-form {
+            margin-bottom: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de Paiement Feexpay</h1>
+
+    <!-- Formulaire de connexion -->
+    <div class="login-form" id="loginForm">
+        <h2>Connexion</h2>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Votre email">
+        </div>
+        <div class="form-group">
+            <label for="password">Mot de passe:</label>
+            <input type="password" id="password" placeholder="Votre mot de passe">
+        </div>
+        <button onclick="login()">Se connecter</button>
+        <div id="loginStatus" style="margin-top: 10px;"></div>
+    </div>
+    
+    <div class="payment-container" id="paymentContainer" style="display: none;">
+        <h2>Petit Pack de Coins</h2>
+        <div class="pack-info">
+            <p><strong>Montant:</strong> 250 FCFA</p>
+            <p><strong>Coins:</strong> 400</p>
+            <p><strong>Description:</strong> Achat de 400 coins</p>
+        </div>
+
+        <!-- Conteneur pour le bouton de paiement -->
+        <div id="render"></div>
+
+        <!-- Messages de statut -->
+        <div id="status" class="success" style="display: none;"></div>
+
+        <!-- Zone de débogage -->
+        <div id="debug"></div>
+    </div>
+
+    <script>
+        // Fonction pour afficher les logs de débogage
+        function debugLog(message) {
+            const debugDiv = document.getElementById('debug');
+            debugDiv.textContent += message + '\n';
+        }
+
+        // Fonction de connexion
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginStatus = document.getElementById('loginStatus');
+
+            try {
+                const response = await fetch('http://localhost:3000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    loginStatus.textContent = 'Connexion réussie !';
+                    loginStatus.style.color = 'green';
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('paymentContainer').style.display = 'block';
+                    initPayment();
+                } else {
+                    loginStatus.textContent = data.error || 'Erreur de connexion';
+                    loginStatus.style.color = 'red';
+                }
+            } catch (error) {
+                loginStatus.textContent = 'Erreur: ' + error.message;
+                loginStatus.style.color = 'red';
+            }
+        }
+
+        // Fonction pour initialiser le paiement
+        async function initPayment() {
+            try {
+                debugLog('Initialisation du paiement...');
+                const token = localStorage.getItem('token');
+                debugLog('Token: ' + token);
+
+                if (!token) {
+                    throw new Error('Token non trouvé. Veuillez vous connecter.');
+                }
+
+                // Appel à notre API pour obtenir les paramètres de paiement
+                const response = await fetch('http://localhost:3000/api/payments/params', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        type: 'coins',
+                        planId: 'small'
+                    })
+                });
+
+                debugLog('Réponse reçue: ' + response.status);
+                
+                // Afficher le texte brut de la réponse pour le débogage
+                const responseText = await response.text();
+                debugLog('Réponse brute: ' + responseText);
+
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    debugLog('Données parsées: ' + JSON.stringify(data, null, 2));
+                } catch (parseError) {
+                    throw new Error('Erreur de parsing JSON: ' + parseError.message);
+                }
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erreur lors de l\'initialisation du paiement');
+                }
+
+                debugLog('Initialisation du bouton Feexpay...');
+
+                // Initialiser le bouton de paiement Feexpay
+                FeexPayButton.init("render", {
+                    id: data.feexpayParams.id,
+                    amount: data.feexpayParams.amount,
+                    token: data.feexpayParams.token,
+                    callback: (response) => {
+                        debugLog('Callback Feexpay: ' + JSON.stringify(response));
+                        if (response.status === 'success') {
+                            document.getElementById('status').textContent = 'Paiement réussi ! Vos coins ont été crédités.';
+                            document.getElementById('status').style.display = 'block';
+                            document.getElementById('status').className = 'success';
+                        } else {
+                            document.getElementById('status').textContent = 'Erreur lors du paiement. Veuillez réessayer.';
+                            document.getElementById('status').style.display = 'block';
+                            document.getElementById('status').className = 'error';
+                        }
+                    },
+                    callback_url: data.feexpayParams.callback_url,
+                    callback_info: data.feexpayParams.callback_info,
+                    mode: 'SANDBOX',
+                    description: data.feexpayParams.description,
+                    buttonText: "Payer",
+                    buttonClass: "mt-3",
+                    defaultValueField: data.feexpayParams.defaultValueField
+                });
+
+                debugLog('Bouton Feexpay initialisé avec succès');
+
+            } catch (error) {
+                debugLog('Erreur: ' + error.message);
+                document.getElementById('status').textContent = 'Erreur: ' + error.message;
+                document.getElementById('status').style.display = 'block';
+                document.getElementById('status').className = 'error';
+            }
+        }
+
+        // Vérifier si l'utilisateur est déjà connecté
+        window.onload = function() {
+            // Toujours afficher le formulaire de connexion en premier
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('paymentContainer').style.display = 'none';
+            
+            // Ajouter un bouton de déconnexion
+            const logoutButton = document.createElement('button');
+            logoutButton.textContent = 'Se déconnecter';
+            logoutButton.onclick = function() {
+                localStorage.removeItem('token');
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('paymentContainer').style.display = 'none';
+                document.getElementById('loginStatus').textContent = '';
+                document.getElementById('status').textContent = '';
+                document.getElementById('debug').textContent = '';
+            };
+            document.body.appendChild(logoutButton);
+        };
+    </script>
+</body>
+</html> 

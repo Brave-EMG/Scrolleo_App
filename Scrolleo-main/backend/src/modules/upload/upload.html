@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de Contenu - Streaming Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .drop-zone {
+            border: 2px dashed #4a5568;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.dragover {
+            border-color: #4299e1;
+            background-color: #ebf8ff;
+        }
+        .file-preview {
+            transition: all 0.3s ease;
+        }
+        .file-preview:hover {
+            transform: translateY(-2px);
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .mapping-preview {
+            font-family: monospace;
+            background: #f3f4f6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #374151;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">Upload de Contenu</h1>
+
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+            <p class="text-blue-800">
+                <b>Instructions :</b> Ajoutez un ou plusieurs épisodes, puis associez chaque fichier à un épisode.<br>
+                <b>Important :</b> Le mapping utilise le nom original du fichier (ex : <code>video1.mp4</code>).<br>
+                Avant l'envoi, vérifiez le résumé du mapping ci-dessous.
+            </p>
+        </div>
+
+        <!-- Section de sélection d'épisode -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Sélection des Épisodes</h2>
+            <div id="episodeList" class="space-y-4">
+                <div class="episode-entry flex items-center space-x-4">
+                    <input type="text" placeholder="ID de l'épisode" class="episode-id flex-1 p-2 border rounded">
+                    <button class="add-episode bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        <i class="fas fa-plus"></i> Ajouter un épisode
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zone de dépôt des fichiers -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div id="dropZone" class="drop-zone rounded-lg p-8 text-center cursor-pointer">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600">Glissez-déposez vos fichiers ici ou</p>
+                <label class="mt-4 inline-block bg-blue-500 text-white px-6 py-2 rounded cursor-pointer hover:bg-blue-600">
+                    Parcourir
+                    <input type="file" id="fileInput" multiple class="hidden">
+                </label>
+                <p class="text-sm text-gray-500 mt-2">Formats acceptés: MP4, WebM, JPG, PNG, SRT</p>
+            </div>
+        </div>
+
+        <!-- Liste des fichiers à uploader -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Fichiers à Uploader</h2>
+            <div id="fileList" class="space-y-4">
+                <!-- Les fichiers seront ajoutés ici dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Résumé du mapping -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Résumé du Mapping (nom du fichier → ID épisode)</h2>
+            <div id="mappingPreview" class="mapping-preview"></div>
+        </div>
+
+        <!-- Section pour afficher les uploads d'un épisode -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Uploads de l'épisode sélectionné</h2>
+            <div id="uploadsList" class="space-y-4"></div>
+        </div>
+
+        <!-- Bouton d'upload -->
+        <div class="text-center">
+            <button id="uploadButton" class="bg-green-500 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fas fa-upload mr-2"></i> Lancer l'Upload
+            </button>
+        </div>
+
+        <!-- Template pour l'affichage des fichiers -->
+        <template id="fileTemplate">
+            <div class="file-preview bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="file-icon text-2xl text-gray-500"></div>
+                        <div>
+                            <h3 class="file-name font-medium"></h3>
+                            <p class="file-size text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <select class="episode-select p-2 border rounded">
+                            <!-- Les options seront ajoutées dynamiquement -->
+                        </select>
+                        <button class="remove-file text-red-500 hover:text-red-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <div class="progress-bar bg-gray-200 rounded-full h-2">
+                        <div class="progress bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const fileList = document.getElementById('fileList');
+            const uploadButton = document.getElementById('uploadButton');
+            const fileTemplate = document.getElementById('fileTemplate');
+            const episodeList = document.getElementById('episodeList');
+            const mappingPreview = document.getElementById('mappingPreview');
+            const uploadsList = document.getElementById('uploadsList');
+            let files = new Map();
+            let episodes = new Set();
+            let fileToEpisode = new Map();
+
+            // Gestion du drag & drop
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                dropZone.classList.add('dragover');
+            }
+
+            function unhighlight(e) {
+                dropZone.classList.remove('dragover');
+            }
+
+            // Gestion du drop de fichiers
+            dropZone.addEventListener('drop', handleDrop, false);
+            fileInput.addEventListener('change', handleFiles, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const droppedFiles = dt.files;
+                handleFiles({ target: { files: droppedFiles } });
+            }
+
+            function handleFiles(e) {
+                const newFiles = [...e.target.files];
+                newFiles.forEach(file => {
+                    if (!files.has(file.name)) {
+                        files.set(file.name, file);
+                        fileToEpisode.set(file.name, null);
+                        addFileToList(file);
+                    }
+                });
+                updateUploadButton();
+                updateMappingPreview();
+            }
+
+            // Ajout d'un fichier à la liste
+            function addFileToList(file) {
+                const clone = fileTemplate.content.cloneNode(true);
+                const filePreview = clone.querySelector('.file-preview');
+                const fileName = clone.querySelector('.file-name');
+                const fileSize = clone.querySelector('.file-size');
+                const fileIcon = clone.querySelector('.file-icon');
+                const episodeSelect = clone.querySelector('.episode-select');
+                const removeButton = clone.querySelector('.remove-file');
+
+                fileName.textContent = file.name;
+                fileSize.textContent = formatFileSize(file.size);
+                fileIcon.innerHTML = getFileIcon(file.type);
+
+                // Ajouter les options d'épisodes
+                episodes.forEach(episodeId => {
+                    const option = document.createElement('option');
+                    option.value = episodeId;
+                    option.textContent = `Épisode ${episodeId}`;
+                    episodeSelect.appendChild(option);
+                });
+
+                // Sélection automatique si un seul épisode
+                if (episodes.size === 1) {
+                    episodeSelect.value = Array.from(episodes)[0];
+                    fileToEpisode.set(file.name, episodeSelect.value);
+                } else {
+                    // Si plusieurs épisodes, on garde la valeur précédente si elle existe
+                    if (fileToEpisode.get(file.name)) {
+                        episodeSelect.value = fileToEpisode.get(file.name);
+                    }
+                }
+                updateMappingPreview();
+
+                // Gestion du changement d'épisode pour ce fichier
+                episodeSelect.addEventListener('change', (e) => {
+                    fileToEpisode.set(file.name, e.target.value);
+                    updateMappingPreview();
+                });
+
+                // Gestion de la suppression
+                removeButton.addEventListener('click', () => {
+                    files.delete(file.name);
+                    fileToEpisode.delete(file.name);
+                    filePreview.remove();
+                    updateUploadButton();
+                    updateMappingPreview();
+                });
+
+                fileList.appendChild(clone);
+            }
+
+            // Mise à jour du bouton d'upload
+            function updateUploadButton() {
+                uploadButton.disabled = files.size === 0 || episodes.size === 0;
+            }
+
+            // Formatage de la taille des fichiers
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Icône selon le type de fichier
+            function getFileIcon(type) {
+                if (type.startsWith('video/')) return '<i class="fas fa-video"></i>';
+                if (type.startsWith('image/')) return '<i class="fas fa-image"></i>';
+                if (type.includes('text') || type.includes('subtitle')) return '<i class="fas fa-closed-captioning"></i>';
+                return '<i class="fas fa-file"></i>';
+            }
+
+            // Gestion des épisodes
+            document.querySelector('.add-episode').addEventListener('click', () => {
+                const episodeEntry = document.createElement('div');
+                episodeEntry.className = 'episode-entry flex items-center space-x-4';
+                episodeEntry.innerHTML = `
+                    <input type="text" placeholder="ID de l'épisode" class="episode-id flex-1 p-2 border rounded">
+                    <button class="remove-episode text-red-500 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                episodeList.appendChild(episodeEntry);
+
+                // Gestion de la suppression d'épisode
+                episodeEntry.querySelector('.remove-episode').addEventListener('click', () => {
+                    const episodeId = episodeEntry.querySelector('.episode-id').value;
+                    episodes.delete(episodeId);
+                    episodeEntry.remove();
+                    updateEpisodeSelects();
+                    updateUploadButton();
+                    updateMappingPreview();
+                });
+
+                // Gestion de l'ajout d'épisode
+                episodeEntry.querySelector('.episode-id').addEventListener('change', (e) => {
+                    const oldId = e.target.dataset.oldId;
+                    const newId = e.target.value;
+                    
+                    if (oldId) episodes.delete(oldId);
+                    if (newId) episodes.add(newId);
+                    
+                    e.target.dataset.oldId = newId;
+                    updateEpisodeSelects();
+                    updateUploadButton();
+                    updateMappingPreview();
+                });
+            });
+
+            // Mise à jour des sélecteurs d'épisodes
+            function updateEpisodeSelects() {
+                document.querySelectorAll('.episode-select').forEach(select => {
+                    const currentValue = select.value;
+                    select.innerHTML = '';
+                    episodes.forEach(episodeId => {
+                        const option = document.createElement('option');
+                        option.value = episodeId;
+                        option.textContent = `Épisode ${episodeId}`;
+                        if (episodeId === currentValue) option.selected = true;
+                        select.appendChild(option);
+                    });
+                });
+            }
+
+            // Mise à jour du résumé du mapping
+            function updateMappingPreview() {
+                const mapping = {};
+                fileToEpisode.forEach((ep, fname) => {
+                    if (ep) mapping[fname] = ep;
+                });
+                mappingPreview.textContent = JSON.stringify(mapping, null, 2);
+            }
+
+            // Fonction pour afficher les uploads d'un épisode
+            async function afficherUploadsEpisode(episodeId) {
+                uploadsList.innerHTML = '<div class="text-gray-500">Chargement...</div>';
+                if (!episodeId) {
+                    uploadsList.innerHTML = '<div class="text-gray-400">Sélectionnez un épisode pour voir ses fichiers uploadés.</div>';
+                    return;
+                }
+                try {
+                    const response = await fetch(`/api/uploads/episodes/${episodeId}/uploads`);
+                    let uploads = [];
+                    try {
+                        uploads = await response.json();
+                    } catch (e) {
+                        uploadsList.innerHTML = '<div class="text-red-500">Erreur lors du parsing de la réponse du serveur.</div>';
+                        return;
+                    }
+                    if (!Array.isArray(uploads) || uploads.length === 0) {
+                        uploadsList.innerHTML = '<div class="text-gray-500">Aucun fichier uploadé pour cet épisode.</div>';
+                        return;
+                    }
+                    uploadsList.innerHTML = '';
+                    uploads.forEach(upload => {
+                        uploadsList.innerHTML += `
+                            <div class="flex items-center space-x-4 bg-gray-50 p-3 rounded">
+                                <div>
+                                    <b>${upload.type}</b> <br>
+                                    <span class="text-sm text-gray-600">${upload.original_name}</span>
+                                </div>
+                                <a href="${upload.path}" target="_blank" class="ml-auto text-blue-600 underline">Voir</a>
+                            </div>
+                        `;
+                    });
+                } catch (e) {
+                    uploadsList.innerHTML = '<div class="text-red-500">Erreur lors du chargement des uploads.</div>';
+                }
+            }
+
+            // Appeler afficherUploadsEpisode quand un épisode est sélectionné (dans la liste des épisodes)
+            episodeList.addEventListener('change', function(e) {
+                if (e.target.classList.contains('episode-id')) {
+                    const episodeId = e.target.value;
+                    if (episodeId) afficherUploadsEpisode(episodeId);
+                }
+            });
+
+            // Appeler afficherUploadsEpisode après un upload réussi (pour le premier épisode du mapping)
+            function afficherUploadsApresUpload(filesMapping) {
+                const episodeIds = Object.values(filesMapping);
+                if (episodeIds.length > 0) {
+                    afficherUploadsEpisode(episodeIds[0]);
+                }
+            }
+
+            // Gestion de l'upload
+            uploadButton.addEventListener('click', async () => {
+                const formData = new FormData();
+                const filesMapping = {};
+
+                files.forEach((file, fileName) => {
+                    formData.append('files', file);
+                    const episodeId = fileToEpisode.get(fileName);
+                    if (episodeId) {
+                        filesMapping[fileName] = episodeId;
+                    }
+                });
+
+                formData.append('files_mapping', JSON.stringify(filesMapping));
+
+                try {
+                    uploadButton.disabled = true;
+                    uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Upload en cours...';
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    let result = null;
+                    try {
+                        result = await response.json();
+                    } catch (e) {
+                        showNotification('Erreur lors du parsing de la réponse du serveur.', 'error');
+                        uploadButton.disabled = false;
+                        uploadButton.innerHTML = '<i class="fas fa-upload mr-2"></i> Lancer l\'Upload';
+                        return;
+                    }
+
+                    if (response.ok) {
+                        showNotification('Upload réussi !', 'success');
+                        // Réinitialiser le formulaire
+                        files.clear();
+                        fileToEpisode.clear();
+                        fileList.innerHTML = '';
+                        updateUploadButton();
+                        updateMappingPreview();
+                        afficherUploadsApresUpload(filesMapping);
+                    } else {
+                        throw new Error(result.error || 'Erreur lors de l\'upload');
+                    }
+                } catch (error) {
+                    showNotification(error.message, 'error');
+                } finally {
+                    uploadButton.disabled = false;
+                    uploadButton.innerHTML = '<i class="fas fa-upload mr-2"></i> Lancer l\'Upload';
+                }
+            });
+
+            // Notification
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg ${
+                    type === 'success' ? 'bg-green-500' : 
+                    type === 'error' ? 'bg-red-500' : 
+                    'bg-blue-500'
+                } text-white`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 3000);
+            }
+        });
+    </script>
+</body>
+</html>g

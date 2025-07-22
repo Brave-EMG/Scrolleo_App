@@ -1,0 +1,181 @@
+Système de gestion des uploads :
+
+    Configuration des routes d'upload
+    Validation des fichiers
+    Gestion des métadonnées
+
+    À faire :
+
+        Route POST /upload qui permet à un réalisateur de téléverser une vidéo.
+
+        Stockage direct vers un cloud (comme AWS S3 ou GCP Storage).
+
+        Renvoyer l’URL une fois l’upload terminé.
+
+        Une fois le fichier uploadé, déclencher le transcodage.
+
+Système de transcodage :
+
+    Configuration du service de transcodage
+    Gestion des différentes qualités vidéo
+    Gestion des formats (HLS/DASH)
+
+    À faire :
+
+        Script transcoder.js qui reçoit une vidéo et la convertit (par exemple en HLS).
+
+        Peut être fait localement avec ffmpeg, ou dans le cloud avec un service (MediaConvert, etc.)
+
+        Stocker les fichiers transcodés dans le cloud, et garder les URLs pour le streaming.
+
+Système de streaming :
+
+    Configuration des routes pour le streaming
+    Gestion des chunks vidéo
+    Gestion du streaming adaptatif
+
+    À faire :
+
+        Route GET /stream/:videoId → retourne l'URL du fichier .m3u8.
+
+        Middleware pour vérifier si l’utilisateur a accès (coins, abonnement…).
+
+        Utilise un CDN si possible (CloudFront, etc.).
+
+Système de coins et paiements :
+
+    Configuration de l'intégration avec Stripe
+    Gestion des transactions de coins
+    Gestion des abonnements
+
+# Statistiques des utilisateurs
+curl -X GET http://localhost:3000/api/admin/stats/users \
+-H "Authorization: Bearer VOTRE_TOKEN_ADMIN"
+
+# Statistiques des revenus (30 derniers jours)
+curl -X GET http://localhost:3000/api/admin/stats/revenue?period=30 \
+-H "Authorization: Bearer VOTRE_TOKEN_ADMIN"
+
+# Statistiques du contenu
+curl -X GET http://localhost:3000/api/admin/stats/content \
+-H "Authorization: Bearer VOTRE_TOKEN_ADMIN"
+
+# Statistiques d'engagement
+curl -X GET http://localhost:3000/api/admin/stats/engagement \
+-H "Authorization: Bearer VOTRE_TOKEN_ADMIN"
+
+# Statistiques des réalisateurs
+curl -X GET http://localhost:3000/api/admin/stats/directors?period=30 \
+-H "Authorization: Bearer VOTRE_TOKEN_ADMIN"
+
+StatsAdmin
+    Utilisateurs (auth)
+        Nombre total d'utilisateurs
+        Nouveaux utilisateurs par période
+        Utilisateurs actifs/inactifs
+        Distribution des rôles
+    Contenu (episodes, movies)
+        Nombre total d'épisodes/films
+        Contenu ajouté par période
+        Contenu le plus populaire
+        Taux de conversion (vues/achats)
+    Monétisation (payments, coins)
+        Revenus totaux
+        Revenus par période
+        Distribution des types de paiement
+        Taux de conversion des abonnements
+    Engagement (favorites, history, like)
+        Nombre total de favoris
+        Temps de visionnage moyen
+        Taux d'engagement
+        Contenu le plus aimé
+    Performance (upload, transcode)
+        Temps moyen de traitement
+        Taux de succès des uploads
+        Utilisation du stockage
+        Qualité des transcodages
+
+
+1. Règle de rémunération par vue
+
+    Prix de référence : 0,6 FCFA par vue d’épisode.
+
+2. Catégories de films et pourcentages de rémunération
+
+    Exclusivités SCROLLEO : 50 % (puis 20 % après 2 ans)
+    Très récents (<2 ans) : 35 % (puis 20 % après 2 ans)
+    Récents (2 à 5 ans) : 30 % (puis 20 % après 2 ans)
+    Anciens (5 à 20 ans) : 20 %
+    La rémunération réelle = nombre de vues × 0,6 FCFA × pourcentage selon la catégorie.
+
+3. Dégressivité
+
+    Après 2 ans, toutes les catégories passent à 20 %.
+
+*** revenu = nombre de vues × 0,6 FCFA × (pourcentage catégorie / 100) ***
+
+    Il faut recuperer :
+    
+        - Le nombre de vues (dans la période voulue)
+        - Le film parent et sa catégorie
+        - La date de sortie du film (pour savoir si >2 ans)
+        - Le pourcentage à appliquer (catégorie + dégressivité)
+
+psql -U postgres -d streaming_platform (connexion a la base de donnee)
+
+psql -U postgres -d streaming_platform -f src/migrations/create_uploads_table.sql 
+
+TRUNCATE TABLE uploads, episodes, movies RESTART IDENTITY CASCADE(Supprimer les donnees)
+
+Pour voir les données d’une table (exemple : movies) : 
+    SELECT * FROM movies;
+
+Pour voir la liste des tables
+    \dt 
+    \d  movies
+
+Supprimer une table
+
+    DROP TABLE episodes CASCADE;
+dependances 
+
+    npm install @paypal/checkout-server-sdk bull
+
+
+
+
+💡 Comment implémenter la désactivation / retrait du consentement ?
+1. Afficher un écran ou une pop-up de consentement au lancement
+
+    Dès la première ouverture : "Acceptez-vous que l’app collecte des statistiques d’usage anonymes ?"
+
+    Boutons : ✅ Oui | ❌ Non
+
+2. Ajouter un bouton dans les paramètres utilisateur
+
+    Exemple : Paramètres > Confidentialité
+
+        ✅ [ ] Autoriser la collecte anonyme de données
+
+        ✅ [ ] Activer les recommandations personnalisées
+
+3. Gérer le retrait
+
+    Si l’utilisateur retire son consentement :
+
+        Supprimer les données déjà collectées (si nécessaire)
+
+        Ne plus envoyer certaines données au backend
+
+
+| **Élément**                           | **Valeur**                                                                   |
+| ------------------------------------- | ---------------------------------------------------------------------------- |
+| **Protocole de sécurité**             | TLS (Transport Layer Security) – version 1.3                                 |
+| **Nom de domaine sécurisé**           | `https://streaming-platform.onrender.com` *(ou nom de domaine personnalisé)* |
+| **Bénéficiaire du certificat**        | La plateforme de streaming (domaine principal et ses sous-domaines)          |
+| **Autorité de certification**         | Let's Encrypt                                                                |
+| **Type de signature numérique**       | SHA-256 avec clé RSA                                                         |
+| **Sous-domaines couverts**            | Oui – ex : `www.`, `api.`, `admin.`                                          |
+| **Date d’émission**                   | Automatique à la mise en ligne (renouvellement tous les 90 jours)            |
+| **Date d’expiration**                 | 90 jours après émission (renouvellement automatique)                         |
+| **Infrastructure SSL complémentaire** | Fournie par Render (et éventuellement Cloudflare pour le CDN)                |

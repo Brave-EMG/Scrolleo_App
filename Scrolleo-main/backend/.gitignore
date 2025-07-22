@@ -1,0 +1,6 @@
+render.yaml
+.env
+// **/android/**/google-services.json
+// **/android/**/google-services.plist
+// **/android/**/google-services.json
+node_modules/

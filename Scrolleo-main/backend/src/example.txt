@@ -1,0 +1,124 @@
+/**
+ * Exemples d'utilisation des API Episodes et Uploads
+ * Voici comment utiliser les différentes routes avec curl ou dans votre application frontend
+ */
+
+// ==================== API EPISODES ====================
+
+// 1. Créer un épisode
+// POST /api/episodes
+/*
+curl -X POST http://localhost:3000/api/episodes \
+  -H "Content-Type: application/json" \
+  -d '{
+
+    "movie_id": 1,
+    "title": "Mon Premier Épisode",
+    "description": "Description de l\'épisode",
+    "episode_number": 1,
+    "season_number": 1
+  }'
+*/
+
+// 2. Créer plusieurs épisodes en une seule requête
+
+// POST http://localhost:3000/api/upload/batch
+/*
+curl -X POST http://localhost:3000/api/upload/batch \
+  -H "Content-Type: multipart/form-data" \
+  -F "files=@/chemin/vers/video1.mp4" \
+  -F "files=@/chemin/vers/thumbnail1.jpg" \
+  -F "files=@/chemin/vers/video2.mp4" \
+  -F "files_mapping={\"video1.mp4\": \"1\", \"thumbnail1.jpg\": \"1\", \"video2.mp4\": \"2\"}"
+
+*/
+
+// 3. Récupérer un épisode par son ID
+// GET /api/episodes/:id
+/*
+curl -X GET http://localhost:3000/api/episodes/1
+*/
+
+// 4. Récupérer tous les épisodes d'un film
+// GET /api/episodes/movie/:movieId
+/*
+curl -X GET http://localhost:3000/api/episodes/movie/123
+*/
+
+// 5. Récupérer les épisodes d'une saison spécifique
+// GET /api/episodes/movie/:movieId?season=1
+/*
+curl -X GET http://localhost:3000/api/episodes/movie/123?season=1
+*/
+
+// 6. Mettre à jour un épisode
+// PUT /api/episodes/:id
+/*
+curl -X PUT http://localhost:3000/api/episodes/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Nouveau titre",
+    "description": "Nouvelle description"
+  }'
+*/
+
+// 7. Supprimer un épisode
+// DELETE /api/episodes/:id
+/*
+curl -X DELETE http://localhost:3000/api/episodes/1
+*/
+
+// ==================== API UPLOADS ====================
+
+// 1. Uploader des fichiers pour un épisode
+// POST /api/uploads
+/*
+curl -X POST http://localhost:3000/api/uploads \
+  -F "episode_id=1" \
+  -F "files=@/chemin/vers/video.mp4" \
+  -F "files=@/chemin/vers/miniature.jpg" \
+  -F "files=@/chemin/vers/soustitre.srt"
+*/
+
+<<<<<<< HEAD
+=======
+// 1. Uploader des fichiers pour plusieurs épisodes
+// POST /api/uploads
+/*
+curl -X POST https://localhost:3000/api/uploads \
+  -H "Authorization: Bearer votre_token_jwt" \
+  -F "files=@video1.mp4" \
+  -F "files=@thumbnail1.jpg" \
+  -F "files=@video2.mp4" \
+  -F "files_mapping={\"video1.mp4\":\"123\",\"thumbnail1.jpg\":\"123\",\"video2.mp4\":\"456\"}"
+*/
+
+>>>>>>> 1e785767b3a8353cad40dd7fe0c853c4e223911f
+// 2. Récupérer un upload par son ID
+// GET /api/uploads/:id
+/*
+curl -X GET http://localhost:3000/api/uploads/1
+*/
+
+// 3. Mettre à jour le statut d'un upload
+// PATCH /api/uploads/:id/status
+/*
+curl -X PATCH http://localhost:3000/api/uploads/1/status \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "processing"
+  }'
+*/
+
+// 4. Supprimer un upload
+// DELETE /api/uploads/:id
+/*
+curl -X DELETE http://localhost:3000/api/uploads/1
+*/
+
+// ==================== Workflow complet ====================
+/*
+1. Créer un épisode
+2. Uploader les fichiers pour cet épisode
+3. Récupérer toutes les informations de l'épisode avec ses fichiers associés
+*/

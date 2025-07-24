@@ -811,7 +811,7 @@ export const handleWebhook = async (req, res) => {
             console.log('🔄 Mise à jour du statut du paiement...');
             await pool.query(
                 'UPDATE payments SET status = $1 WHERE id = $2',
-                ['success', paymentId]
+                ['success', paymentResult.rows[0].payment_id]
             );
             console.log('✅ Statut du paiement mis à jour');
 
@@ -850,12 +850,14 @@ export const handleWebhook = async (req, res) => {
             res.json({ message: 'Transaction traitée avec succès' });
         } else {
             console.log('❌ Paiement échoué, statut:', status);
-            const paymentId = paymentInfo.payment_id || transactionId;
-            await pool.query(
-                'UPDATE payments SET status = $1 WHERE id = $2',
-                ['failed', paymentId]
-            );
-            console.log('✅ Statut mis à jour: failed');
+            // Utiliser le payment_id du résultat de la requête
+            if (paymentResult.rows.length > 0) {
+                await pool.query(
+                    'UPDATE payments SET status = $1 WHERE id = $2',
+                    ['failed', paymentResult.rows[0].payment_id]
+                );
+                console.log('✅ Statut mis à jour: failed');
+            }
             console.log('=== FIN WEBHOOK FEEXPAY ===');
             res.json({ message: 'Transaction échouée' });
         }

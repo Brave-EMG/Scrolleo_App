@@ -84,6 +84,11 @@ class EpisodeListState extends State<EpisodeList> {
         try {
           final accessInfo = await _episodeService.checkEpisodeAccess(episodeId.toString());
           _episodeAccess[episodeId.toString()] = accessInfo;
+          
+          // Mettre à jour l'épisode avec les informations de l'accès (y compris la miniature)
+          if (accessInfo['episode'] != null) {
+            episode['thumbnail_url'] = accessInfo['episode']['thumbnail_url'];
+          }
         } catch (e) {
           print('Erreur lors de la vérification d\'accès pour l\'épisode $episodeId: $e');
           // Par défaut, considérer comme non accessible
@@ -268,6 +273,8 @@ class EpisodeListState extends State<EpisodeList> {
               final hasAccess = accessInfo?['hasAccess'] ?? false;
               final isFree = episode['is_free'] ?? false;
               final episodeNumber = episode['episode_number'] ?? (index + 1);
+              
+
               
               return GestureDetector(
                   onTap: () {

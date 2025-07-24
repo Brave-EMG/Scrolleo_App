@@ -64,6 +64,11 @@ class _EpisodesGridState extends State<EpisodesGrid> {
         try {
           final accessInfo = await _episodeService.checkEpisodeAccess(episodeId.toString());
           _episodeAccess[episodeId.toString()] = accessInfo;
+          
+          // Mettre à jour l'épisode avec les informations de l'accès (y compris la miniature)
+          if (accessInfo['episode'] != null) {
+            episode['thumbnail_url'] = accessInfo['episode']['thumbnail_url'];
+          }
         } catch (e) {
           print('Erreur lors de la vérification d\'accès pour l\'épisode $episodeId: $e');
           _episodeAccess[episodeId.toString()] = {

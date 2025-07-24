@@ -97,40 +97,298 @@ const sendEmail = async (mailOptions) => {
 
 // Fonction utilitaire pour générer le texte de la facture
 const generateInvoiceText = ({ userEmail, amount, transactionId, type, date, coinsAdded }) => {
+    const isSubscription = type === 'subscription';
+    const typeText = isSubscription ? 'Abonnement Premium' : 'Achat de Coins';
+    const typeIcon = isSubscription ? '🎬' : '🪙';
+    const statusText = isSubscription ? 'Abonnement Activé' : 'Coins Crédités';
+    
     return `
     <!DOCTYPE html>
     <html>
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Facture Scrolleo</title>
         <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { text-align: center; margin-bottom: 30px; }
-            .details { margin: 20px 0; }
-            .footer { margin-top: 30px; font-size: 12px; color: #666; }
-            .amount { font-size: 24px; color: #2ecc71; font-weight: bold; }
-            .transaction-id { color: #666; font-size: 14px; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                line-height: 1.6; 
+                color: #333; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+            .container { 
+                max-width: 600px; 
+                margin: 0 auto; 
+                background: white; 
+                border-radius: 20px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            .header { 
+                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+                color: white; 
+                padding: 40px 30px;
+                text-align: center;
+                position: relative;
+            }
+            .header::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+                opacity: 0.3;
+            }
+            .header h1 { 
+                font-size: 28px; 
+                font-weight: 700; 
+                margin-bottom: 10px;
+                position: relative;
+                z-index: 1;
+            }
+            .header .subtitle {
+                font-size: 16px;
+                opacity: 0.9;
+                position: relative;
+                z-index: 1;
+            }
+            .status-badge {
+                display: inline-block;
+                background: rgba(255,255,255,0.2);
+                padding: 8px 20px;
+                border-radius: 25px;
+                font-size: 14px;
+                font-weight: 600;
+                margin-top: 15px;
+                position: relative;
+                z-index: 1;
+            }
+            .content { 
+                padding: 40px 30px; 
+            }
+            .greeting {
+                font-size: 18px;
+                color: #555;
+                margin-bottom: 25px;
+                font-weight: 500;
+            }
+            .transaction-details {
+                background: #f8f9fa;
+                border-radius: 15px;
+                padding: 25px;
+                margin: 25px 0;
+                border-left: 5px solid #ff6b6b;
+            }
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 0;
+                border-bottom: 1px solid #eee;
+            }
+            .detail-row:last-child {
+                border-bottom: none;
+            }
+            .detail-label {
+                font-weight: 600;
+                color: #555;
+                font-size: 14px;
+            }
+            .detail-value {
+                font-weight: 700;
+                color: #333;
+                font-size: 14px;
+            }
+            .amount-highlight {
+                background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 18px;
+                font-weight: 700;
+                display: inline-block;
+            }
+            .coins-highlight {
+                background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 16px;
+                font-weight: 700;
+                display: inline-block;
+            }
+            .transaction-id {
+                background: #34495e;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 10px;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                margin: 20px 0;
+                text-align: center;
+                word-break: break-all;
+            }
+            .benefits {
+                background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+                color: white;
+                padding: 25px;
+                border-radius: 15px;
+                margin: 25px 0;
+            }
+            .benefits h3 {
+                font-size: 18px;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .benefits ul {
+                list-style: none;
+                padding: 0;
+            }
+            .benefits li {
+                padding: 8px 0;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .benefits li::before {
+                content: '✓';
+                background: rgba(255,255,255,0.3);
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            .footer { 
+                background: #2c3e50;
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            .footer h3 {
+                font-size: 16px;
+                margin-bottom: 15px;
+                color: #ecf0f1;
+            }
+            .footer p {
+                font-size: 14px;
+                color: #bdc3c7;
+                margin-bottom: 10px;
+            }
+            .contact-info {
+                background: rgba(255,255,255,0.1);
+                padding: 15px;
+                border-radius: 10px;
+                margin-top: 15px;
+            }
+            .logo {
+                font-size: 24px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+            @media (max-width: 600px) {
+                .container { margin: 10px; border-radius: 15px; }
+                .header { padding: 30px 20px; }
+                .content { padding: 30px 20px; }
+                .footer { padding: 25px 20px; }
+            }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <h1>Facture de Paiement</h1>
+                <div class="logo">🎬 SCROLLEO</div>
+                <h1>Paiement Confirmé !</h1>
+                <div class="subtitle">${typeIcon} ${typeText}</div>
+                <div class="status-badge">✅ ${statusText}</div>
             </div>
-            <div class="details">
-                <p>Bonjour,</p>
-                <p>Merci pour votre paiement. Voici les détails de votre transaction :</p>
-                <ul>
-                    <li><strong>Montant :</strong> <span class="amount">${amount} XOF</span></li>
-                    <li><strong>Date :</strong> ${date}</li>
-                    <li><strong>Type :</strong> ${type === 'subscription' ? 'Abonnement' : 'Achat de coins'}</li>
-                    ${coinsAdded ? `<li><strong>Coins crédités :</strong> ${coinsAdded}</li>` : ''}
-                </ul>
-                <p class="transaction-id">Numéro de transaction : ${transactionId}</p>
+            
+            <div class="content">
+                <div class="greeting">
+                    Bonjour ! 👋<br>
+                    Nous sommes ravis de vous confirmer que votre paiement a été traité avec succès.
+                </div>
+                
+                <div class="transaction-details">
+                    <h3 style="margin-bottom: 20px; color: #333; font-size: 18px;">📋 Détails de la Transaction</h3>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">💰 Montant payé :</span>
+                        <span class="detail-value">
+                            <span class="amount-highlight">${amount} XOF</span>
+                        </span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">📅 Date de paiement :</span>
+                        <span class="detail-value">${date}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">🎯 Type d'achat :</span>
+                        <span class="detail-value">${typeIcon} ${typeText}</span>
+                    </div>
+                    
+                    ${coinsAdded ? `
+                    <div class="detail-row">
+                        <span class="detail-label">🪙 Coins reçus :</span>
+                        <span class="detail-value">
+                            <span class="coins-highlight">+${coinsAdded} coins</span>
+                        </span>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="transaction-id">
+                    🔐 ID de Transaction : ${transactionId}
+                </div>
+                
+                ${isSubscription ? `
+                <div class="benefits">
+                    <h3>🎉 Votre Abonnement Premium est Actif !</h3>
+                    <ul>
+                        <li>Accès illimité à tous les épisodes</li>
+                        <li>Aucune publicité pendant la lecture</li>
+                        <li>Contenu exclusif et nouveautés en avant-première</li>
+                        <li>Support prioritaire</li>
+                        <li>Qualité vidéo optimale</li>
+                    </ul>
+                </div>
+                ` : `
+                <div class="benefits">
+                    <h3>🎮 Vos Coins sont Prêts !</h3>
+                    <ul>
+                        <li>Débloquez des épisodes exclusifs</li>
+                        <li>Accédez au contenu premium</li>
+                        <li>Profitez de bonus spéciaux</li>
+                        <li>Échangez contre des récompenses</li>
+                    </ul>
+                </div>
+                `}
             </div>
+            
             <div class="footer">
-                <p>Ceci fait office de reçu/facture officiel.</p>
-                <p>Pour toute question concernant votre paiement, n'hésitez pas à contacter notre service client.</p>
-                <p>Cordialement,<br>L'équipe support</p>
+                <h3>📞 Besoin d'Aide ?</h3>
+                <p>Notre équipe support est disponible 24h/24 pour vous accompagner.</p>
+                <div class="contact-info">
+                    <p>📧 Email : support@scrolleo.com</p>
+                    <p>💬 Chat : Disponible dans l'application</p>
+                    <p>📱 WhatsApp : +226 XX XX XX XX</p>
+                </div>
+                <p style="margin-top: 20px; font-size: 12px; opacity: 0.8;">
+                    Ce document fait office de facture officielle.<br>
+                    Merci de votre confiance ! 🚀
+                </p>
             </div>
         </div>
     </body>
@@ -517,12 +775,11 @@ export const handleWebhook = async (req, res) => {
 
             console.log('🔔 Envoi de la notification...');
             // Envoyer une notification simple (optionnel)
-            await sendNotification(
-                user_id,
-                type === 'subscription' ?
-                    'Votre abonnement a été activé avec succès !' :
-                    'Paiement réussi ! Vos coins ont été crédités.'
-            );
+            const notificationMessage = type === 'subscription' ?
+                '🎉 Félicitations ! Votre abonnement Premium est maintenant actif. Profitez de tous nos contenus exclusifs sans publicité ! 🎬✨' :
+                '🪙 Paiement réussi ! Vos coins ont été crédités. Vous pouvez maintenant débloquer des épisodes exclusifs et profiter du contenu premium ! 🎮💎';
+            
+            await sendNotification(user_id, notificationMessage);
             console.log('✅ Notification envoyée');
 
             console.log('📤 Réponse de succès envoyée à Feexpay');

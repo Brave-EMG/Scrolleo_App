@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import authMiddleware from '../auth/authMiddleware.js';
+import cors from 'cors';
 
 // Configuration de dotenv
 const __filename = fileURLToPath(import.meta.url);
@@ -16,6 +17,15 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const router = express.Router();
 const uploadController = new UploadController();
+
+// Configuration CORS spécifique pour les uploads
+const uploadCorsOptions = {
+  origin: ['http://localhost:3001', 'https://localhost:3001', 'https://scrolleo.brave-emg.com'],
+  credentials: true,
+  methods: ['POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Content-Length'],
+  optionsSuccessStatus: 200
+};
 
 // Configuration AWS S3 avec SDK v3
 const s3Client = new S3Client({
@@ -77,9 +87,15 @@ const handleMulterError = (err, req, res, next) => {
 
 // Le middleware d'authentification est maintenant importé depuis authMiddleware.js
 
+// Route OPTIONS pour les requêtes preflight CORS
+router.options('/', cors(uploadCorsOptions), (req, res) => {
+    res.status(200).end();
+});
+
 // Route pour l'upload de fichiers pour un ou plusieurs épisodes
 router.post(
     '/',
+    cors(uploadCorsOptions),
     authMiddleware,
     // Utilisez upload.fields pour spécifier plusieurs types de fichiers
     upload.array('files'), // Utilisez le nom 'files' comme paramètre du champ de fichier

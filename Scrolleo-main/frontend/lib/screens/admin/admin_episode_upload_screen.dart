@@ -260,8 +260,6 @@ class _AdminEpisodeUploadScreenState extends State<AdminEpisodeUploadScreen> {
         streamedResponse.statusCode, 
         headers: streamedResponse.headers
       );
-      final uploadData = json.decode(response.body);
-      final isSuccess = uploadData['success'] == true;
 
       // Mettre la progression à 100% quand l'upload est terminé
       if (mounted) {
@@ -271,15 +269,51 @@ class _AdminEpisodeUploadScreenState extends State<AdminEpisodeUploadScreen> {
       }
       
       if (response.statusCode == 200 || response.statusCode == 201) {
-        if (isSuccess) {
+        try {
+          final uploadData = json.decode(response.body);
+          final isSuccess = uploadData['success'] == true;
+          
+          if (isSuccess) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Vidéos uploadées avec succès (${uploadData['total_success'] ?? 0} fichier(s))')),
+              );
+              // Attendre un peu avant de revenir à la page précédente
+              await Future.delayed(const Duration(seconds: 1));
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            }
+          } else {
+            // Même si success est false, on peut avoir des uploads réussis
+            final totalSuccess = uploadData['total_success'] ?? 0;
+            if (totalSuccess > 0) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Upload partiellement réussi: $totalSuccess fichier(s) uploadé(s)')),
+                );
+                // Attendre un peu avant de revenir à la page précédente
+                await Future.delayed(const Duration(seconds: 1));
+                if (mounted) {
+                  Navigator.pop(context);
+                }
+              }
+            } else {
+              throw Exception('Aucun fichier uploadé avec succès');
+            }
+          }
+        } catch (e) {
+          // Si on ne peut pas parser la réponse JSON, considérer comme succès si status code est OK
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Vidéos uploadées avec succès')),
             );
-            Navigator.pop(context);
+            // Attendre un peu avant de revenir à la page précédente
+            await Future.delayed(const Duration(seconds: 1));
+            if (mounted) {
+              Navigator.pop(context);
+            }
           }
-        } else {
-          throw Exception('Erreur lors de l\'upload: ${response.body}');
         }
       } else {
         throw Exception('Erreur lors de l\'upload: ${response.body}');

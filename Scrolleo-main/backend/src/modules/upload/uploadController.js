@@ -314,11 +314,23 @@ export class UploadController {
     // Nouvelle méthode pour extraire les sous-titres
     async extractSubtitles(videoPath, outputPath) {
         try {
+            // D'abord vérifier si des sous-titres existent dans la vidéo
+            const { stdout } = await execAsync(`ffmpeg -i "${videoPath}" 2>&1 | grep -i subtitle`);
+            if (!stdout || stdout.trim() === '') {
+                console.log('Aucun sous-titre trouvé dans la vidéo');
+                return null;
+            }
+
             // Utiliser ffmpeg pour extraire les sous-titres
             await execAsync(`ffmpeg -i "${videoPath}" -map 0:s:0 "${outputPath}"`);
             return outputPath;
         } catch (error) {
             console.error('Erreur lors de l\'extraction des sous-titres:', error);
+            // Si l'erreur indique qu'aucun stream de sous-titre n'existe, c'est normal
+            if (error.message && error.message.includes('Stream map') && error.message.includes('matches no streams')) {
+                console.log('Aucun sous-titre trouvé dans la vidéo (normal)');
+                return null;
+            }
             return null;
         }
     }
@@ -371,12 +383,18 @@ export class UploadController {
             const compressedKey = `videos/${episodeId}/compressed-${file.originalname}`;
             await this.uploadToS3(compressedBuffer, compressedKey, file.mimetype);
 
-            // 4. Extraire les sous-titres si présents
-            const subtitlesExtracted = await this.extractSubtitles(videoPath, subtitlesPath);
-            if (subtitlesExtracted) {
-                const subtitlesBuffer = await fs.readFile(subtitlesPath);
-                const subtitlesKey = `subtitles/${episodeId}/${path.basename(subtitlesPath)}`;
-                await this.uploadToS3(subtitlesBuffer, subtitlesKey, 'application/x-subrip');
+            // 4. Extraire les sous-titres si présents (optionnel)
+            let subtitlesExtracted = null;
+            try {
+                subtitlesExtracted = await this.extractSubtitles(videoPath, subtitlesPath);
+                if (subtitlesExtracted) {
+                    const subtitlesBuffer = await fs.readFile(subtitlesPath);
+                    const subtitlesKey = `subtitles/${episodeId}/${path.basename(subtitlesPath)}`;
+                    await this.uploadToS3(subtitlesBuffer, subtitlesKey, 'application/x-subrip');
+                }
+            } catch (subtitlesError) {
+                console.log('Extraction des sous-titres ignorée (optionnel):', subtitlesError.message);
+                // Ne pas faire échouer l'upload pour les sous-titres
             }
 
             // 5. Nettoyer les fichiers temporaires

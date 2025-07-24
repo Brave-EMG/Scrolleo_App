@@ -14,11 +14,11 @@ const __dirname = path.dirname(__filename);
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://scrolleo.brave-emg.com', 'http://localhost:3001'] // Remplacer par votre domaine frontend en production
-    : ['http://localhost:5000', 'http://localhost:5001', 'http://localhost:3000'], // En développement, autoriser localhost
+    ? ['https://scrolleo.brave-emg.com', 'http://localhost:3001', 'https://localhost:3001'] // Remplacer par votre domaine frontend en production
+    : ['http://localhost:5000', 'http://localhost:5001', 'http://localhost:3000', 'http://localhost:3001', 'https://localhost:3001'], // En développement, autoriser localhost
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Content-Length'],
   optionsSuccessStatus: 200 // Pour les navigateurs legacy
 };
 

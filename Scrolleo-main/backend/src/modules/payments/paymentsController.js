@@ -698,52 +698,68 @@ export const handleWebhook = async (req, res) => {
             console.log('💾 Transaction ID (UUID):', transactionId);
             
             // Récupérer les détails de la transaction via la table feexpay_transactions
-            const paymentResult = await pool.query(
+            let paymentResult = await pool.query(
                 `SELECT p.user_id, p.coins_added, p.type, p.amount, p.id as payment_id 
                  FROM payments p 
                  INNER JOIN feexpay_transactions ft ON p.id = ft.payment_id 
                  WHERE ft.transaction_id = $1`,
                 [transactionId]
             );
+            
+            // Si pas trouvé, essayer de trouver par email et montant
+            if (paymentResult.rows.length === 0) {
+                console.log('🔍 Transaction non trouvée par UUID, recherche par email et montant...');
+                const userEmail = req.body.email;
+                const amount = req.body.amount;
+                
+                if (userEmail && amount) {
+                    console.log('📧 Email:', userEmail);
+                    console.log('💰 Montant:', amount);
+                    
+                    // Récupérer l'user_id par email
+                    const userResult = await pool.query(
+                        'SELECT user_id FROM users WHERE email = $1',
+                        [userEmail]
+                    );
+                    
+                    if (userResult.rows.length > 0) {
+                        const userId = userResult.rows[0].user_id;
+                        console.log('👤 User ID trouvé:', userId);
+                        
+                        // Chercher le paiement en attente pour cet utilisateur et ce montant
+                        paymentResult = await pool.query(
+                            `SELECT user_id, coins_added, type, amount, id as payment_id 
+                             FROM payments 
+                             WHERE user_id = $1 AND amount = $2 AND status = 'pending'
+                             ORDER BY created_at DESC 
+                             LIMIT 1`,
+                            [userId, amount]
+                        );
+                        
+                        if (paymentResult.rows.length > 0) {
+                            console.log('✅ Paiement trouvé par email et montant');
+                            
+                            // Créer l'enregistrement dans feexpay_transactions
+                            const paymentId = paymentResult.rows[0].payment_id;
+                            await pool.query(
+                                'INSERT INTO feexpay_transactions (transaction_id, payment_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                                [transactionId, paymentId]
+                            );
+                            console.log('✅ Lien créé entre UUID et payment_id');
+                        } else {
+                            console.log('❌ Aucun paiement en attente trouvé pour cet utilisateur et montant');
+                        }
+                    } else {
+                        console.log('❌ Utilisateur non trouvé avec cet email');
+                    }
+                }
+            }
 
             console.log('🔍 Résultat de la requête paiement:', paymentResult.rows);
 
             if (paymentResult.rows.length === 0) {
-                console.log('❌ Transaction non trouvée dans la base de données');
-                console.log('🔄 Tentative de création de l\'enregistrement...');
-                
-                // Essayer de récupérer le payment_id depuis callback_info
-                const paymentId = paymentInfo.payment_id;
-                if (paymentId) {
-                    console.log('💾 Payment ID trouvé dans callback_info:', paymentId);
-                    
-                    // Créer l'enregistrement dans feexpay_transactions
-                    await pool.query(
-                        'INSERT INTO feexpay_transactions (transaction_id, payment_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-                        [transactionId, paymentId]
-                    );
-                    console.log('✅ Enregistrement feexpay_transactions créé');
-                    
-                    // Récupérer à nouveau les détails
-                    const newPaymentResult = await pool.query(
-                        `SELECT p.user_id, p.coins_added, p.type, p.amount, p.id as payment_id 
-                         FROM payments p 
-                         INNER JOIN feexpay_transactions ft ON p.id = ft.payment_id 
-                         WHERE ft.transaction_id = $1`,
-                        [transactionId]
-                    );
-                    
-                    if (newPaymentResult.rows.length > 0) {
-                        paymentResult.rows = newPaymentResult.rows;
-                        console.log('✅ Transaction trouvée après création');
-                    } else {
-                        console.log('❌ Impossible de récupérer les détails du paiement');
-                        return res.status(404).json({ message: 'Transaction non trouvée' });
-                    }
-                } else {
-                    console.log('❌ Payment ID non trouvé dans callback_info');
-                    return res.status(404).json({ message: 'Transaction non trouvée' });
-                }
+                console.log('❌ Aucune transaction trouvée dans la base de données');
+                return res.status(404).json({ message: 'Transaction non trouvée' });
             }
 
             const { user_id, coins_added, type, amount } = paymentResult.rows[0];

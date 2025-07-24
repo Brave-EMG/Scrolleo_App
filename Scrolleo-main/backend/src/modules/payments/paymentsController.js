@@ -677,7 +677,8 @@ export const handleWebhook = async (req, res) => {
 
     try {
         console.log('🆔 Transaction ID:', transactionId);
-        console.log('📊 Status:', status);
+        console.log('📊 Status reçu:', status);
+        console.log('📊 Status normalisé:', normalizedStatus);
         console.log('📋 Payment Info:', paymentInfo);
         
         // Vérifier la signature du webhook
@@ -690,7 +691,9 @@ export const handleWebhook = async (req, res) => {
         }
         console.log('✅ Signature valide');
 
-        if (status === 'SUCCESSFUL' || status === 'success') {
+        // Normaliser le statut pour gérer les variations de casse
+        const normalizedStatus = status ? status.toUpperCase() : '';
+        if (normalizedStatus === 'SUCCESSFUL' || normalizedStatus === 'SUCCESS') {
             console.log('✅ Paiement réussi, traitement en cours...');
             
             // Utiliser le transaction_id (UUID de Feexpay)
@@ -849,7 +852,8 @@ export const handleWebhook = async (req, res) => {
             console.log('=== FIN WEBHOOK FEEXPAY ===');
             res.json({ message: 'Transaction traitée avec succès' });
         } else {
-            console.log('❌ Paiement échoué, statut:', status);
+            console.log('❌ Paiement échoué, statut reçu:', status);
+            console.log('❌ Statut normalisé:', normalizedStatus);
             // Utiliser le payment_id du résultat de la requête
             if (paymentResult.rows.length > 0) {
                 await pool.query(
@@ -886,12 +890,6 @@ const sendNotification = async (userId, message) => {
       text: message
     };
     await sendEmail(mailOptions);
-
-    // Enregistrer la notification dans la base de données
-        await pool.query(
-      'INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)',
-      [userId, message, 'payment']
-    );
 
     // Envoyer une notification temps réel si WebSocket est configuré
     if (global.io) {

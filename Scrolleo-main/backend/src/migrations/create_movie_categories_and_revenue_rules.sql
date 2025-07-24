@@ -31,7 +31,7 @@ INSERT INTO revenue_rules (category_id, percentage, percentage_after_2_years, ba
 SELECT category_id, perc, perc2, 0.6
 FROM (
     SELECT name, 
-        CASE WHEN name = 'Exclusivités SCROLLEO' THEN 50
+        CASE WHEN name = 'Exclusivités' THEN 50
              WHEN name = 'Très récents' THEN 35
              WHEN name = 'Récents' THEN 30
              WHEN name = 'Anciens' THEN 20 END AS perc,

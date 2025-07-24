@@ -47,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   final List<String> _categories = [
     'Tous',
-    'Exclusivités SCROLLEO',
+    'Exclusivités',
     'Très récents',
     'Récents',
     'Anciens',
@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   final Map<String, String> categoryEndpoints = {
     'Tous': '/movies/movies',
-    'Exclusivités SCROLLEO': '/movies/exclusive',
+    'Exclusivités': '/movies/exclusive',
     'Très récents': '/movies/recent',
     'Récents': '/movies/mid-old',
     'Anciens': '/movies/old',

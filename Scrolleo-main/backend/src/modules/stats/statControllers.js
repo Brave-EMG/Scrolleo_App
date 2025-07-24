@@ -264,7 +264,7 @@ export const getDirectorRevenueStats = async (req, res) => {
             let percentage = 0;
             let percentageAfter2Years = 0;
             if (movie.status === 'Exclusive') {
-                category = 'Exclusivités SCROLLEO';
+                category = 'Exclusivités';
                 percentage = 50;
                 percentageAfter2Years = 20;
             } else if (diffYears < 2) {

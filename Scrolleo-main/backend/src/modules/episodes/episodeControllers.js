@@ -349,7 +349,17 @@ export class EpisodeController {
                     [ep.episode_id]
                 );
                 if (thumbnailResult.rows.length > 0) {
-                    ep.thumbnail_url = thumbnailResult.rows[0].path;
+                    let thumbnailUrl = thumbnailResult.rows[0].path;
+                    
+                                    // Convertir l'URL S3 en URL CloudFront si nécessaire
+                if (thumbnailUrl && thumbnailUrl.includes('.s3.amazonaws.com')) {
+                    thumbnailUrl = thumbnailUrl.replace(
+                        `https://${process.env.S3_BUCKET}.s3.amazonaws.com`,
+                        process.env.CLOUDFRONT_URL || 'https://dm23yf4cycj8r.cloudfront.net'
+                    );
+                }
+                    
+                    ep.thumbnail_url = thumbnailUrl;
                 }
             }
 
@@ -533,13 +543,29 @@ export class EpisodeController {
             }
             console.log('✅ Épisode trouvé:', episode);
 
-            // Récupérer la miniature de l'épisode
+                        // Récupérer la miniature de l'épisode
             const thumbnailResult = await pool.query(
                 'SELECT path FROM uploads WHERE episode_id = $1 AND type = \'thumbnail\' AND status = \'completed\' ORDER BY created_at DESC LIMIT 1',
                 [episodeId]
             );
             if (thumbnailResult.rows.length > 0) {
-                episode.thumbnail_url = thumbnailResult.rows[0].path;
+                let thumbnailUrl = thumbnailResult.rows[0].path;
+                
+                console.log('🔍 URL originale de la miniature:', thumbnailUrl);
+                console.log('🌐 CLOUDFRONT_URL:', process.env.CLOUDFRONT_URL);
+                console.log('🪣 S3_BUCKET:', process.env.S3_BUCKET);
+                
+                // Convertir l'URL S3 en URL CloudFront si nécessaire
+                if (thumbnailUrl && thumbnailUrl.includes('.s3.amazonaws.com')) {
+                    const cloudfrontUrl = process.env.CLOUDFRONT_URL || 'https://dm23yf4cycj8r.cloudfront.net';
+                    thumbnailUrl = thumbnailUrl.replace(
+                        `https://${process.env.S3_BUCKET}.s3.amazonaws.com`,
+                        cloudfrontUrl
+                    );
+                    console.log('✅ URL convertie en CloudFront:', thumbnailUrl);
+                }
+                
+                episode.thumbnail_url = thumbnailUrl;
             }
 
             // Si l'épisode est gratuit, accès autorisé

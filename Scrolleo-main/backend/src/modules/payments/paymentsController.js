@@ -490,6 +490,16 @@ export const getPaymentParams = async (req, res) => {
         const paymentId = paymentResult.rows[0].id;
         console.log('💾 Paiement créé avec ID:', paymentId);
 
+        // Générer un UUID temporaire pour Feexpay (sera remplacé par le vrai UUID)
+        const tempTransactionId = `temp_${Date.now()}_${paymentId}`;
+        
+        // Créer l'enregistrement dans feexpay_transactions
+        await pool.query(
+            'INSERT INTO feexpay_transactions (transaction_id, payment_id) VALUES ($1, $2)',
+            [tempTransactionId, paymentId]
+        );
+        console.log('🔗 Enregistrement feexpay_transactions créé avec ID temporaire:', tempTransactionId);
+
         // Construire l'URL de callback
         const baseUrl = process.env.API_URL || 'https://scrolleo.onrender.com';
         const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/payments/webhook`;
@@ -683,21 +693,57 @@ export const handleWebhook = async (req, res) => {
         if (status === 'SUCCESSFUL' || status === 'success') {
             console.log('✅ Paiement réussi, traitement en cours...');
             
-            // Utiliser le payment_id des callback_info
-            const paymentId = paymentInfo.payment_id || transactionId;
-            console.log('💾 Payment ID à utiliser:', paymentId);
+            // Utiliser le transaction_id (UUID de Feexpay)
+            const transactionId = reference || order_id;
+            console.log('💾 Transaction ID (UUID):', transactionId);
             
-            // Récupérer les détails de la transaction
+            // Récupérer les détails de la transaction via la table feexpay_transactions
             const paymentResult = await pool.query(
-                'SELECT user_id, coins_added, type, amount FROM payments WHERE id = $1',
-                [paymentId]
+                `SELECT p.user_id, p.coins_added, p.type, p.amount, p.id as payment_id 
+                 FROM payments p 
+                 INNER JOIN feexpay_transactions ft ON p.id = ft.payment_id 
+                 WHERE ft.transaction_id = $1`,
+                [transactionId]
             );
 
             console.log('🔍 Résultat de la requête paiement:', paymentResult.rows);
 
             if (paymentResult.rows.length === 0) {
                 console.log('❌ Transaction non trouvée dans la base de données');
-                return res.status(404).json({ message: 'Transaction non trouvée' });
+                console.log('🔄 Tentative de création de l\'enregistrement...');
+                
+                // Essayer de récupérer le payment_id depuis callback_info
+                const paymentId = paymentInfo.payment_id;
+                if (paymentId) {
+                    console.log('💾 Payment ID trouvé dans callback_info:', paymentId);
+                    
+                    // Créer l'enregistrement dans feexpay_transactions
+                    await pool.query(
+                        'INSERT INTO feexpay_transactions (transaction_id, payment_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                        [transactionId, paymentId]
+                    );
+                    console.log('✅ Enregistrement feexpay_transactions créé');
+                    
+                    // Récupérer à nouveau les détails
+                    const newPaymentResult = await pool.query(
+                        `SELECT p.user_id, p.coins_added, p.type, p.amount, p.id as payment_id 
+                         FROM payments p 
+                         INNER JOIN feexpay_transactions ft ON p.id = ft.payment_id 
+                         WHERE ft.transaction_id = $1`,
+                        [transactionId]
+                    );
+                    
+                    if (newPaymentResult.rows.length > 0) {
+                        paymentResult.rows = newPaymentResult.rows;
+                        console.log('✅ Transaction trouvée après création');
+                    } else {
+                        console.log('❌ Impossible de récupérer les détails du paiement');
+                        return res.status(404).json({ message: 'Transaction non trouvée' });
+                    }
+                } else {
+                    console.log('❌ Payment ID non trouvé dans callback_info');
+                    return res.status(404).json({ message: 'Transaction non trouvée' });
+                }
             }
 
             const { user_id, coins_added, type, amount } = paymentResult.rows[0];

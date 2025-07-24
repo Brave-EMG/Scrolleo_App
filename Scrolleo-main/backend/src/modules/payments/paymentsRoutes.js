@@ -16,6 +16,15 @@ const router = express.Router();
 // Webhook pour Feexpay (non protégé car appelé par Feexpay)
 router.post('/webhook', handleWebhook);
 
+// Route de test GET pour vérifier l'accessibilité du webhook
+router.get('/webhook', (req, res) => {
+    res.json({ 
+        message: 'Webhook endpoint accessible',
+        method: 'GET',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Routes protégées par authentification
 router.use(authMiddleware);
 

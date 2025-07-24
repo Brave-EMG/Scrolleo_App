@@ -244,6 +244,7 @@ class _EpisodesGridState extends State<EpisodesGrid> {
                 final isSelected = episodeNumber == widget.currentEpisode;
 
                 return _EpisodeButton(
+                  episode: episode,
                   episodeNumber: episodeNumber,
                   isSelected: isSelected,
                   isLocked: isLocked,
@@ -275,6 +276,7 @@ class _EpisodesGridState extends State<EpisodesGrid> {
 }
 
 class _EpisodeButton extends StatelessWidget {
+  final Map<String, dynamic> episode;
   final int episodeNumber;
   final bool isSelected;
   final bool isLocked;
@@ -282,6 +284,7 @@ class _EpisodeButton extends StatelessWidget {
 
   const _EpisodeButton({
     Key? key,
+    required this.episode,
     required this.episodeNumber,
     this.isSelected = false,
     this.isLocked = false,
@@ -300,25 +303,64 @@ class _EpisodeButton extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (!isLocked && episodeNumber == 1)
-                  const Icon(
-                    Icons.graphic_eq,
-                    color: Colors.grey,
-                    size: 16,
-                  ),
-                Text(
-                  episodeNumber.toString(),
-                  style: TextStyle(
-                    color: isLocked ? Colors.grey : Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+            // Miniature de l'épisode (si disponible)
+            if (episode['thumbnail_url'] != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  episode['thumbnail_url'],
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback vers le numéro si l'image ne charge pas
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (!isLocked && episodeNumber == 1)
+                            const Icon(
+                              Icons.graphic_eq,
+                              color: Colors.grey,
+                              size: 16,
+                            ),
+                          Text(
+                            episodeNumber.toString(),
+                            style: TextStyle(
+                              color: isLocked ? Colors.grey : Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-              ],
-            ),
+              )
+            else
+              // Numéro de l'épisode centré (fallback)
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (!isLocked && episodeNumber == 1)
+                      const Icon(
+                        Icons.graphic_eq,
+                        color: Colors.grey,
+                        size: 16,
+                      ),
+                    Text(
+                      episodeNumber.toString(),
+                      style: TextStyle(
+                        color: isLocked ? Colors.grey : Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             if (isLocked)
               const Positioned(
                 top: 4,

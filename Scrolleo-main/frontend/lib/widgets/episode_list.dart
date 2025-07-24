@@ -286,18 +286,43 @@ class EpisodeListState extends State<EpisodeList> {
                     border: isSelected ? Border.all(color: Colors.orange, width: 2) : null,
                   ),
                   child: Stack(
-                          children: [
-                      // Numéro de l'épisode centré
-                      Center(
-                        child: Text(
-                          '$episodeNumber',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                    children: [
+                      // Miniature de l'épisode (si disponible)
+                      if (episode['thumbnail_url'] != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            episode['thumbnail_url'],
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              // Fallback vers le numéro si l'image ne charge pas
+                              return Center(
+                                child: Text(
+                                  '$episodeNumber',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                      else
+                        // Numéro de l'épisode centré (fallback)
+                        Center(
+                          child: Text(
+                            '$episodeNumber',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
                       // Icône de lecture pour l'épisode sélectionné
                       if (isSelected)
                         Positioned(
@@ -319,9 +344,9 @@ class EpisodeListState extends State<EpisodeList> {
                             color: Colors.orange,
                             size: 16,
                           ),
-                            ),
-                          ],
                         ),
+                    ],
+                  ),
                 ),
               );
             },

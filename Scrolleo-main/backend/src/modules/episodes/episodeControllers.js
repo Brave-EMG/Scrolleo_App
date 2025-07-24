@@ -334,13 +334,23 @@ export class EpisodeController {
                 episodes = await Episode.findByMovie(movieId);
             }
 
-            // Pour chaque épisode, récupère le vrai nombre de vues (COUNT dans episode_views)
+            // Pour chaque épisode, récupère le vrai nombre de vues et la miniature
             for (const ep of episodes) {
-                const result = await pool.query(
+                // Récupérer le nombre de vues
+                const viewsResult = await pool.query(
                     'SELECT COUNT(*) FROM episode_views WHERE episode_id = $1',
                     [ep.episode_id]
                 );
-                ep.views = parseInt(result.rows[0].count, 10);
+                ep.views = parseInt(viewsResult.rows[0].count, 10);
+
+                // Récupérer la miniature
+                const thumbnailResult = await pool.query(
+                    'SELECT path FROM uploads WHERE episode_id = $1 AND type = \'thumbnail\' AND status = \'completed\' ORDER BY created_at DESC LIMIT 1',
+                    [ep.episode_id]
+                );
+                if (thumbnailResult.rows.length > 0) {
+                    ep.thumbnail_url = thumbnailResult.rows[0].path;
+                }
             }
 
             res.json({
@@ -522,6 +532,15 @@ export class EpisodeController {
                 return res.status(404).json({ error: 'Épisode non trouvé' });
             }
             console.log('✅ Épisode trouvé:', episode);
+
+            // Récupérer la miniature de l'épisode
+            const thumbnailResult = await pool.query(
+                'SELECT path FROM uploads WHERE episode_id = $1 AND type = \'thumbnail\' AND status = \'completed\' ORDER BY created_at DESC LIMIT 1',
+                [episodeId]
+            );
+            if (thumbnailResult.rows.length > 0) {
+                episode.thumbnail_url = thumbnailResult.rows[0].path;
+            }
 
             // Si l'épisode est gratuit, accès autorisé
             if (episode.is_free) {

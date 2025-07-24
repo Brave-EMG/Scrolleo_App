@@ -838,16 +838,16 @@ export class EpisodeController {
             const { episodeId } = req.params;
             
             // Récupérer l'épisode pour obtenir l'URL de la miniature
-            const [episode] = await pool.query(
-                'SELECT thumbnail_url FROM episodes WHERE episode_id = ?',
+            const episodeResult = await pool.query(
+                'SELECT thumbnail_url FROM episodes WHERE episode_id = $1',
                 [episodeId]
             );
             
-            if (!episode || !episode[0] || !episode[0].thumbnail_url) {
+            if (!episodeResult.rows || episodeResult.rows.length === 0 || !episodeResult.rows[0].thumbnail_url) {
                 return res.status(404).json({ error: 'Miniature non trouvée' });
             }
             
-            const thumbnailUrl = episode[0].thumbnail_url;
+            const thumbnailUrl = episodeResult.rows[0].thumbnail_url;
             
             // Si c'est une URL CloudFront, la servir directement
             if (thumbnailUrl.includes('cloudfront.net')) {

@@ -184,7 +184,7 @@ export class UploadController {
 
             // Récupérer les informations du film pour obtenir le réalisateur
             const { rows: movieRows } = await pool.query(
-                'SELECT m.*, d.name as director_name FROM movies m LEFT JOIN directors d ON m.director_id = d.director_id WHERE m.movie_id = $1',
+                'SELECT m.*, u.username as director_name FROM movies m LEFT JOIN users u ON m.director_id = u.user_id WHERE m.movie_id = $1',
                 [episode.movie_id]
             );
 

@@ -160,150 +160,219 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           backgroundColor: Colors.grey[900],
-          title: const Text('Ajouter un film', style: TextStyle(color: Colors.white)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('Ajouter un film', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24)),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Titre',
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                ),
-                TextField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                  maxLines: 3,
-                ),
-                TextField(
-                  controller: _episodesCountController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre d\'épisodes',
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: _seasonController,
-                  decoration: const InputDecoration(
-                    labelText: 'Saison (optionnel)',
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                  keyboardType: TextInputType.text,
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<Map<String, dynamic>>(
-                  value: _selectedDirector,
-                  decoration: const InputDecoration(
-                    labelText: 'Réalisateur',
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
-                  items: _directors.map((director) {
-                    return DropdownMenuItem(
-                      value: director,
-                      child: Text(
-                        director['username'] ?? director['email'] ?? 'Inconnu',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-    setState(() {
-                      _selectedDirector = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  children: _availableGenres.map((genre) {
-                    final isSelected = _selectedGenres.contains(genre);
-                    return FilterChip(
-                      label: Text(genre, style: TextStyle(color: isSelected ? Colors.white : Colors.white70)),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        setState(() {
-                          if (selected) {
-                            _selectedGenres.add(genre);
-      } else {
-                            _selectedGenres.remove(genre);
-                          }
-                        });
-                      },
-                      backgroundColor: Colors.grey[800],
-                      selectedColor: Colors.blue,
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Switch(
-                      value: _isExclusive,
-                      onChanged: (value) {
-                        setState(() {
-                          _isExclusive = value;
-                        });
-                      },
-                      activeColor: Colors.orange,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Titre',
+                      hintText: 'Ex: Cendrillon',
+                      labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: Colors.grey[850],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blueAccent)),
                     ),
-                    const SizedBox(width: 8),
-                    Text('Exclusivités ', style: TextStyle(color: Colors.white)),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      hintText: 'Décrivez le film...',
+                      labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: Colors.grey[850],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blueAccent)),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _episodesCountController,
+                    decoration: InputDecoration(
+                      labelText: 'Nombre d\'épisodes',
+                      hintText: 'Ex: 10',
+                      labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: Colors.grey[850],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blueAccent)),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _seasonController,
+                    decoration: InputDecoration(
+                      labelText: 'Saison (optionnel)',
+                      hintText: 'Ex: 1',
+                      labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: Colors.grey[850],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blueAccent)),
+                    ),
+                    style: const TextStyle(color: Colors.white),
+                    keyboardType: TextInputType.text,
+                  ),
+                  const SizedBox(height: 18),
+                  DropdownButtonFormField<Map<String, dynamic>>(
+                    value: _selectedDirector,
+                    decoration: InputDecoration(
+                      labelText: 'Réalisateur',
+                      labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: Colors.grey[850],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    dropdownColor: Colors.grey[900],
+                    items: _directors.map((director) {
+                      return DropdownMenuItem(
+                        value: director,
+                        child: Text(
+                          director['username'] ?? director['email'] ?? 'Inconnu',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedDirector = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 18),
+                  Text('Genres', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    children: _availableGenres.map((genre) {
+                      final isSelected = _selectedGenres.contains(genre);
+                      return FilterChip(
+                        label: Text(genre, style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontWeight: FontWeight.w600)),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedGenres.add(genre);
+                            } else {
+                              _selectedGenres.remove(genre);
+                            }
+                          });
+                        },
+                        backgroundColor: Colors.grey[800],
+                        selectedColor: Colors.blueAccent,
+                        checkmarkColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: isSelected ? 4 : 0,
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Switch(
+                        value: _isExclusive,
+                        onChanged: (value) {
+                          setState(() {
+                            _isExclusive = value;
+                          });
+                        },
+                        activeColor: Colors.orange,
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Exclusivités ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final result = await FilePicker.platform.pickFiles(
+                        type: FileType.image,
+                        allowMultiple: false,
+                      );
+                      if (result != null) {
+                        setState(() {
+                          _coverImagePath = result.files.single.name;
+                          _coverImageBytes = result.files.single.bytes;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.image),
+                    label: Text(_coverImagePath ?? 'Choisir une image'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    ),
+                  ),
+                  if (_coverImageBytes != null) ...[
+                    const SizedBox(height: 10),
+                    Center(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.memory(
+                          _coverImageBytes!,
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    final result = await FilePicker.platform.pickFiles(
-                      type: FileType.image,
-                      allowMultiple: false,
-                    );
-                    if (result != null) {
-        setState(() {
-                        _coverImagePath = result.files.single.name;
-                        _coverImageBytes = result.files.single.bytes;
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.image),
-                  label: Text(_coverImagePath ?? 'Choisir une image'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+                  const SizedBox(height: 18),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                        builder: (context, child) {
+                          return Theme(
+                            data: ThemeData.dark().copyWith(
+                              colorScheme: const ColorScheme.dark(
+                                primary: Colors.blueAccent,
+                                onPrimary: Colors.white,
+                                surface: Colors.grey,
+                                onSurface: Colors.white,
+                              ),
+                              dialogBackgroundColor: Colors.grey[900],
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (date != null) {
+                        setState(() {
+                          _selectedDate = DateTime.utc(date.year, date.month, date.day);
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.calendar_today),
+                    label: Text(_selectedDate?.toString().split(' ')[0] ?? 'Choisir une date'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
-                    );
-                    if (date != null) {
-      setState(() {
-                        _selectedDate = DateTime.utc(date.year, date.month, date.day);
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.calendar_today),
-                  label: Text(_selectedDate?.toString().split(' ')[0] ?? 'Choisir une date'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           actions: [
@@ -312,86 +381,92 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
                 Navigator.pop(context);
                 _resetForm();
               },
-              child: const Text('Annuler', style: TextStyle(color: Colors.orange)),
+              child: const Text('Annuler', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                if (_selectedDirector == null || _selectedDate == null || _selectedGenres.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Veuillez remplir tous les champs obligatoires')),
-                  );
-                  return;
-                }
-
-                try {
-                  final request = http.MultipartRequest(
-                    'POST',
-                    Uri.parse('${Environment.apiBaseUrl}/movies/create'),
-                  );
-
-                  request.fields['title'] = _titleController.text;
-                  request.fields['description'] = _descriptionController.text;
-                  request.fields['episodes_count'] = _episodesCountController.text;
-                  if (_seasonController.text.isNotEmpty) {
-                    request.fields['season'] = _seasonController.text;
-                  }
-                  request.fields['director_id'] = _selectedDirector!['user_id'].toString();
-                  request.fields['release_date'] = _selectedDate!.toIso8601String();
-                  request.fields['genre'] = _selectedGenres.join(',');
-                  request.fields['status'] = _isExclusive ? 'Exclusive' : 'NoExclusive';
-
-                  if (_coverImageBytes != null) {
-                    request.files.add(
-                      http.MultipartFile.fromBytes(
-                        'cover_image',
-                        _coverImageBytes!,
-                        filename: _coverImagePath,
-                      ),
-                    );
-                  }
-
-                  print('--- AJOUT FILM ---');
-                  print('title: ${_titleController.text}');
-                  print('description: ${_descriptionController.text}');
-                  print('episodes_count: ${_episodesCountController.text}');
-                  print('season: ${_seasonController.text}');
-                  print('director_id: ${_selectedDirector!['user_id'].toString()}');
-                  print('release_date: ${_selectedDate!.toIso8601String()}');
-                  print('genre: ${_selectedGenres.join(',')}');
-                  print('cover_image: ${_coverImagePath}');
-
-                  final response = await request.send();
-                  if (response.statusCode == 201) {
-                    Navigator.pop(context);
-                    _resetForm();
-                    
-                    // Afficher un message de succès
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  if (_selectedDirector == null || _selectedDate == null || _selectedGenres.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Film ajouté avec succès'),
-                        backgroundColor: Colors.green,
-                        duration: Duration(seconds: 2),
-                      ),
+                      const SnackBar(content: Text('Veuillez remplir tous les champs obligatoires')),
                     );
-                    
-                    // Attendre un peu puis rafraîchir la liste
-                    await Future.delayed(const Duration(milliseconds: 500));
-                    await _fetchMovies();
-                    
-                  } else {
-                    throw Exception('Erreur lors de l\'ajout du film: ${response.statusCode}');
+                    return;
                   }
-    } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erreur: $e')),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
+
+                  try {
+                    final request = http.MultipartRequest(
+                      'POST',
+                      Uri.parse('${Environment.apiBaseUrl}/movies/create'),
+                    );
+
+                    request.fields['title'] = _titleController.text;
+                    request.fields['description'] = _descriptionController.text;
+                    request.fields['episodes_count'] = _episodesCountController.text;
+                    if (_seasonController.text.isNotEmpty) {
+                      request.fields['season'] = _seasonController.text;
+                    }
+                    request.fields['director_id'] = _selectedDirector!['user_id'].toString();
+                    request.fields['release_date'] = _selectedDate!.toIso8601String();
+                    request.fields['genre'] = _selectedGenres.join(',');
+                    request.fields['status'] = _isExclusive ? 'Exclusive' : 'NoExclusive';
+
+                    if (_coverImageBytes != null) {
+                      request.files.add(
+                        http.MultipartFile.fromBytes(
+                          'cover_image',
+                          _coverImageBytes!,
+                          filename: _coverImagePath,
+                        ),
+                      );
+                    }
+
+                    print('--- AJOUT FILM ---');
+                    print('title: ${_titleController.text}');
+                    print('description: ${_descriptionController.text}');
+                    print('episodes_count: ${_episodesCountController.text}');
+                    print('season: ${_seasonController.text}');
+                    print('director_id: ${_selectedDirector!['user_id'].toString()}');
+                    print('release_date: ${_selectedDate!.toIso8601String()}');
+                    print('genre: ${_selectedGenres.join(',')}');
+                    print('cover_image: ${_coverImagePath}');
+
+                    final response = await request.send();
+                    if (response.statusCode == 201) {
+                      Navigator.pop(context);
+                      _resetForm();
+                      
+                      // Afficher un message de succès
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Film ajouté avec succès'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      
+                      // Attendre un peu puis rafraîchir la liste
+                      await Future.delayed(const Duration(milliseconds: 500));
+                      await _fetchMovies();
+                      
+                    } else {
+                      throw Exception('Erreur lors de l\'ajout du film: ${response.statusCode}');
+                    }
+      } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erreur: $e')),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                child: const Text('Ajouter'),
               ),
-              child: const Text('Ajouter'),
             ),
           ],
         ),
@@ -624,7 +699,7 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
                       prefixIcon: const Icon(Icons.search, color: Colors.orange),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    ),
+                    },
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -1315,4 +1390,4 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
       },
     );
   }
-} 
+}

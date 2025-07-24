@@ -62,95 +62,58 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
     }
   }
 
-  void _onAddEpisode() {
-    final _titleController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          backgroundColor: Colors.grey[900],
-          title: const Text('Ajouter un épisode', style: TextStyle(color: Colors.white)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Titre',
-                    labelStyle: TextStyle(color: Colors.white70),
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler', style: TextStyle(color: Colors.orange)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (_titleController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Veuillez remplir tous les champs obligatoires')),
-                  );
-                  return;
-                }
-                try {
-                  // Recharge la liste des épisodes depuis le backend
-                  final responseEpisodes = await http.get(Uri.parse('${Environment.apiBaseUrl}/episodes/movie/${widget.movie.id}'));
-                  List<dynamic> episodesBackend = [];
-                  if (responseEpisodes.statusCode == 200) {
-                    final decoded = json.decode(responseEpisodes.body);
-                    if (decoded is Map && decoded['episodes'] is List) {
-                      episodesBackend = decoded['episodes'];
-                    }
-                  }
-                  final usedNumbers = episodesBackend.map((e) => e['episode_number'] as int? ?? 0).toSet();
-                  int nextNumber = 1;
-                  while (usedNumbers.contains(nextNumber)) {
-                    nextNumber++;
-                  }
-                  final forcedTitle = 'Épisode $nextNumber';
-                  final response = await http.post(
-                    Uri.parse('${Environment.apiBaseUrl}/episodes/'),
-                    headers: {'Content-Type': 'application/json'},
-                    body: json.encode({
-                      'movie_id': widget.movie.id,
-                      'episodes': [{
-                        'title': forcedTitle,
-                        'episode_number': nextNumber,
-                        'season_number': 1
-                      }]
-                    }),
-                  );
-                  if (response.statusCode == 201 || response.statusCode == 200) {
-                    Navigator.pop(context);
-                    _fetchEpisodes();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Épisode ajouté avec succès')),
-                    );
-                  } else {
-                    throw Exception('Erreur lors de l\'ajout de l\'épisode');
-                  }
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erreur: $e')),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Ajouter'),
-            ),
-          ],
-        ),
-      ),
-    );
+  void _onAddEpisode() async {
+    try {
+      // Récupérer la liste des épisodes existants depuis le backend
+      final responseEpisodes = await http.get(Uri.parse('${Environment.apiBaseUrl}/episodes/movie/${widget.movie.id}'));
+      List<dynamic> episodesBackend = [];
+      if (responseEpisodes.statusCode == 200) {
+        final decoded = json.decode(responseEpisodes.body);
+        if (decoded is Map && decoded['episodes'] is List) {
+          episodesBackend = decoded['episodes'];
+        }
+      }
+      
+      // Trouver le prochain numéro d'épisode
+      int nextEpisodeNumber = 1;
+      if (episodesBackend.isNotEmpty) {
+        // Si il y a des épisodes, prendre le numéro du dernier + 1
+        final episodeNumbers = episodesBackend.map((e) => e['episode_number'] as int? ?? 0).toList();
+        episodeNumbers.sort();
+        nextEpisodeNumber = episodeNumbers.last + 1;
+      }
+      // Si aucun épisode, nextEpisodeNumber reste à 1
+      
+      // Créer le titre automatiquement
+      final episodeTitle = 'Épisode $nextEpisodeNumber';
+      
+      // Ajouter l'épisode directement sans dialog
+      final response = await http.post(
+        Uri.parse('${Environment.apiBaseUrl}/episodes/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'movie_id': widget.movie.id,
+          'episodes': [{
+            'title': episodeTitle,
+            'episode_number': nextEpisodeNumber,
+            'season_number': 1
+          }]
+        }),
+      );
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        _fetchEpisodes();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Épisode $nextEpisodeNumber ajouté avec succès')),
+        );
+      } else {
+        throw Exception('Erreur lors de l\'ajout de l\'épisode');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
   }
 
   void _onEditEpisode(Map<String, dynamic> episode) {
@@ -266,7 +229,7 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
   }
 
   void _onAddMultipleEpisodes() {
-    final List<TextEditingController> titleControllers = List.generate(5, (_) => TextEditingController());
+    final TextEditingController episodesCountController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -276,18 +239,31 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: List.generate(5, (i) => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Épisode ${i + 1}', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-                  TextField(
-                    controller: titleControllers[i],
-                    decoration: const InputDecoration(labelText: 'Titre', labelStyle: TextStyle(color: Colors.white70)),
-                    style: const TextStyle(color: Colors.white),
+              children: [
+                TextField(
+                  controller: episodesCountController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre d\'épisodes à ajouter',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    hintText: 'Ex: 3 pour ajouter Épisode 1, Épisode 2, Épisode 3',
+                    hintStyle: TextStyle(color: Colors.grey),
                   ),
-                  const SizedBox(height: 16),
-                ],
-              )),
+                  style: const TextStyle(color: Colors.white),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[800],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Les épisodes seront automatiquement numérotés dans l\'ordre (Épisode 1, Épisode 2, etc.)',
+                    style: TextStyle(color: Colors.orange, fontSize: 12),
+                  ),
+                ),
+              ],
             ),
           ),
           actions: [
@@ -297,20 +273,14 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                final List<Map<String, dynamic>> newEpisodes = [];
-                for (int i = 0; i < 5; i++) {
-                  if (titleControllers[i].text.isNotEmpty) {
-                    newEpisodes.add({
-                      'title': '', // sera forcé plus bas
-                    });
-                  }
-                }
-                if (newEpisodes.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez remplir au moins un épisode complet')));
+                final count = int.tryParse(episodesCountController.text.trim());
+                if (count == null || count <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez entrer un nombre valide d\'épisodes')));
                   return;
                 }
+                
                 try {
-                  // Recharge la liste des épisodes depuis le backend
+                  // Récupérer la liste des épisodes existants depuis le backend
                   final responseEpisodes = await http.get(Uri.parse('${Environment.apiBaseUrl}/episodes/movie/${widget.movie.id}'));
                   List<dynamic> episodesBackend = [];
                   if (responseEpisodes.statusCode == 200) {
@@ -319,18 +289,25 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
                       episodesBackend = decoded['episodes'];
                     }
                   }
+                  
+                  // Trouver le prochain numéro d'épisode disponible
                   final usedNumbers = episodesBackend.map((e) => e['episode_number'] as int? ?? 0).toSet();
                   int nextNumber = 1;
-                  for (var ep in newEpisodes) {
-                    while (usedNumbers.contains(nextNumber)) {
-                      nextNumber++;
-                    }
-                    ep['title'] = 'Épisode $nextNumber';
-                    ep['episode_number'] = nextNumber;
-                    ep['season_number'] = 1;
-                    usedNumbers.add(nextNumber);
+                  while (usedNumbers.contains(nextNumber)) {
                     nextNumber++;
                   }
+                  
+                  // Créer la liste des nouveaux épisodes
+                  final List<Map<String, dynamic>> newEpisodes = [];
+                  for (int i = 0; i < count; i++) {
+                    newEpisodes.add({
+                      'title': 'Épisode ${nextNumber + i}',
+                      'episode_number': nextNumber + i,
+                      'season_number': 1,
+                    });
+                  }
+                  
+                  // Envoyer au backend
                   final response = await http.post(
                     Uri.parse('${Environment.apiBaseUrl}/episodes/'),
                     headers: {'Content-Type': 'application/json'},
@@ -339,10 +316,11 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
                       'episodes': newEpisodes
                     }),
                   );
+                  
                   if (response.statusCode == 201 || response.statusCode == 200) {
                     Navigator.pop(context);
                     _fetchEpisodes();
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Épisodes ajoutés avec succès')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$count épisode(s) ajouté(s) avec succès')));
                   } else {
                     throw Exception('Erreur lors de l\'ajout des épisodes');
                   }
@@ -537,109 +515,185 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
           ),
         ),
         child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16.0 : 24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               // Header avec titre et statistiques
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 16.0 : 20.0),
                 decoration: BoxDecoration(
                   color: Colors.grey[900]!.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.orange.withOpacity(0.3)),
                 ),
-                child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                        Text(
-                          'Gestion des épisodes',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                child: MediaQuery.of(context).size.width < 600
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Gestion des épisodes',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${widget.movie.title}',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(height: 8),
+                          Text(
+                            '${widget.movie.title}',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${episodes.length} épisode(s) au total',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
+                          const SizedBox(height: 8),
+                          Text(
+                            '${episodes.length} épisode(s) au total',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Gestion des épisodes',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${widget.movie.title}',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${episodes.length} épisode(s) au total',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.orange.withOpacity(0.5)),
+                            ),
+                            child: Icon(
+                              Icons.admin_panel_settings,
+                              color: Colors.orange,
+                              size: 32,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Icon(
-                        Icons.admin_panel_settings,
-                        color: Colors.orange,
-                        size: 32,
-                      ),
-                    ),
-                  ],
-                ),
               ),
               
               const SizedBox(height: 24),
               
               // Boutons d'action
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12.0 : 16.0),
                 decoration: BoxDecoration(
                   color: Colors.grey[900]!.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
-                    ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildActionButton(
-                      icon: Icons.add,
-                      label: 'Ajouter',
-                      color: Colors.green,
-                      onPressed: _onAddEpisode,
-                    ),
-                    _buildActionButton(
-                      icon: Icons.upload_file,
-                      label: 'Uploader',
-                      color: Colors.blue,
-                      onPressed: () {
-                        context.push(
-                          '/admin/episode_upload',
-                          extra: {
-                            'movieId': widget.movie.id,
-                            'movieTitle': widget.movie.title,
-                          },
-                        );
-                      },
-                    ),
-                    _buildActionButton(
-                      icon: Icons.library_add,
-                      label: 'Multiples',
-                      color: Colors.orange,
-                      onPressed: _onAddMultipleEpisodes,
-                    ),
-                  ],
                 ),
-            ),
+                child: MediaQuery.of(context).size.width < 600
+                    ? Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Expanded(
+                                child: _buildActionButton(
+                                  icon: Icons.add,
+                                  label: 'Ajouter',
+                                  color: Colors.green,
+                                  onPressed: _onAddEpisode,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildActionButton(
+                                  icon: Icons.upload_file,
+                                  label: 'Uploader',
+                                  color: Colors.blue,
+                                  onPressed: () {
+                                    context.push(
+                                      '/admin/episode_upload',
+                                      extra: {
+                                        'movieId': widget.movie.id,
+                                        'movieTitle': widget.movie.title,
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: _buildActionButton(
+                              icon: Icons.library_add,
+                              label: 'Multiples',
+                              color: Colors.orange,
+                              onPressed: _onAddMultipleEpisodes,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildActionButton(
+                            icon: Icons.add,
+                            label: 'Ajouter',
+                            color: Colors.green,
+                            onPressed: _onAddEpisode,
+                          ),
+                          _buildActionButton(
+                            icon: Icons.upload_file,
+                            label: 'Uploader',
+                            color: Colors.blue,
+                            onPressed: () {
+                              context.push(
+                                '/admin/episode_upload',
+                                extra: {
+                                  'movieId': widget.movie.id,
+                                  'movieTitle': widget.movie.title,
+                                },
+                              );
+                            },
+                          ),
+                          _buildActionButton(
+                            icon: Icons.library_add,
+                            label: 'Multiples',
+                            color: Colors.orange,
+                            onPressed: _onAddMultipleEpisodes,
+                          ),
+                        ],
+                      ),
+              ),
               
             const SizedBox(height: 24),
               
@@ -706,9 +760,9 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
                                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: MediaQuery.of(context).size.width > 1200 ? 3 : 
                                                  MediaQuery.of(context).size.width > 800 ? 2 : 1,
-                                  childAspectRatio: 1.2,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
+                                  childAspectRatio: MediaQuery.of(context).size.width < 600 ? 0.8 : 1.2,
+                                  crossAxisSpacing: MediaQuery.of(context).size.width < 600 ? 8 : 16,
+                                  mainAxisSpacing: MediaQuery.of(context).size.width < 600 ? 8 : 16,
                                 ),
                                 itemCount: episodes.length,
                                 itemBuilder: (context, index) {
@@ -730,14 +784,25 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
     required Color color,
     required VoidCallback onPressed,
   }) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return ElevatedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, color: Colors.white, size: 20),
-      label: Text(label, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                style: ElevatedButton.styleFrom(
+      icon: Icon(icon, color: Colors.white, size: isMobile ? 18 : 20),
+      label: Text(
+        label, 
+        style: TextStyle(
+          color: Colors.white, 
+          fontWeight: FontWeight.w600,
+          fontSize: isMobile ? 12 : 14,
+        ),
+      ),
+      style: ElevatedButton.styleFrom(
         backgroundColor: color,
-                                  foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        foregroundColor: Colors.white,
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 20, 
+          vertical: isMobile ? 8 : 12,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 4,
       ),
@@ -773,7 +838,7 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
         children: [
           // Header de la carte
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 16),
             decoration: BoxDecoration(
               color: Colors.orange.withOpacity(0.2),
               borderRadius: const BorderRadius.only(
@@ -784,31 +849,31 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: MediaQuery.of(context).size.width < 600 ? 32 : 40,
+                  height: MediaQuery.of(context).size.width < 600 ? 32 : 40,
                   decoration: BoxDecoration(
                     color: Colors.orange,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(MediaQuery.of(context).size.width < 600 ? 16 : 20),
                   ),
                   child: Center(
                     child: Text(
                       '$episodeNumber',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: MediaQuery.of(context).size.width < 600 ? 8 : 12),
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: MediaQuery.of(context).size.width < 600 ? 14 : 16,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -820,56 +885,118 @@ class _AdminManageEpisodesScreenState extends State<AdminManageEpisodesScreen> {
           // Contenu de la carte
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(MediaQuery.of(context).size.width < 600 ? 12 : 16),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   // Boutons d'action
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildCardButton(
-                        icon: Icons.video_library,
-                        label: 'Vidéos',
-                        color: Colors.purple,
-                        onPressed: () => _showEpisodeUploads(context, episodeId),
-                      ),
-                      _buildCardButton(
-                        icon: Icons.play_circle,
-                        label: 'Voir',
-                        color: Colors.green,
-                        onPressed: () => _showEpisodeVideo(context, episodeId),
-                      ),
-                    ],
-                  ),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildCardButton(
-                        icon: Icons.upload_file,
-                        label: 'Uploader',
-                        color: Colors.blue,
-                                onPressed: () {
-                                  context.push(
-                                    '/admin/episode_upload',
-                                    extra: {
-                                      'movieId': widget.movie.id,
-                                      'movieTitle': widget.movie.title,
-                              'episodeId': episodeId,
-                              'episodeTitle': title,
+                  MediaQuery.of(context).size.width < 600
+                      ? Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(
+                                  child: _buildCardButton(
+                                    icon: Icons.video_library,
+                                    label: 'Vidéos',
+                                    color: Colors.purple,
+                                    onPressed: () => _showEpisodeUploads(context, episodeId),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: _buildCardButton(
+                                    icon: Icons.play_circle,
+                                    label: 'Voir',
+                                    color: Colors.green,
+                                    onPressed: () => _showEpisodeVideo(context, episodeId),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(
+                                  child: _buildCardButton(
+                                    icon: Icons.upload_file,
+                                    label: 'Uploader',
+                                    color: Colors.blue,
+                                    onPressed: () {
+                                      context.push(
+                                        '/admin/episode_upload',
+                                        extra: {
+                                          'movieId': widget.movie.id,
+                                          'movieTitle': widget.movie.title,
+                                          'episodeId': episodeId,
+                                          'episodeTitle': title,
+                                        },
+                                      );
                                     },
-                                  );
-                                },
-                      ),
-                      _buildCardButton(
-                        icon: Icons.edit,
-                        label: 'Modifier',
-                        color: Colors.orange,
-                        onPressed: () => _onEditEpisode(episode),
-                      ),
-                    ],
-                  ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: _buildCardButton(
+                                    icon: Icons.edit,
+                                    label: 'Modifier',
+                                    color: Colors.orange,
+                                    onPressed: () => _onEditEpisode(episode),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildCardButton(
+                              icon: Icons.video_library,
+                              label: 'Vidéos',
+                              color: Colors.purple,
+                              onPressed: () => _showEpisodeUploads(context, episodeId),
+                            ),
+                            _buildCardButton(
+                              icon: Icons.play_circle,
+                              label: 'Voir',
+                              color: Colors.green,
+                              onPressed: () => _showEpisodeVideo(context, episodeId),
+                            ),
+                          ],
+                        ),
+                  
+                  MediaQuery.of(context).size.width < 600
+                      ? const SizedBox.shrink()
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildCardButton(
+                              icon: Icons.upload_file,
+                              label: 'Uploader',
+                              color: Colors.blue,
+                              onPressed: () {
+                                context.push(
+                                  '/admin/episode_upload',
+                                  extra: {
+                                    'movieId': widget.movie.id,
+                                    'movieTitle': widget.movie.title,
+                                    'episodeId': episodeId,
+                                    'episodeTitle': title,
+                                  },
+                                );
+                              },
+                            ),
+                            _buildCardButton(
+                              icon: Icons.edit,
+                              label: 'Modifier',
+                              color: Colors.orange,
+                              onPressed: () => _onEditEpisode(episode),
+                            ),
+                          ],
+                        ),
                   
                   // Bouton supprimer
                   SizedBox(

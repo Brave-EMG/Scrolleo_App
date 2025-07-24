@@ -91,6 +91,14 @@ class _AdminEpisodeUploadScreenState extends State<AdminEpisodeUploadScreen> {
       );
 
       if (result != null && mounted) {
+        // Limiter à maximum 2 fichiers
+        if (result.files.length > 2) {
+          setState(() {
+            _error = 'Vous ne pouvez sélectionner que maximum 2 vidéos à la fois.';
+          });
+          return;
+        }
+
         setState(() {
           _selectedFiles = result.files.map((file) => {
             'file': file,
@@ -120,6 +128,17 @@ class _AdminEpisodeUploadScreenState extends State<AdminEpisodeUploadScreen> {
       if (mounted) {
         setState(() {
           _error = 'Veuillez sélectionner un épisode pour chaque vidéo.';
+        });
+      }
+      return;
+    }
+
+    // Vérifier que les vidéos sont pour des épisodes différents
+    final selectedEpisodeIds = _selectedFiles.map((f) => f['episodeId']).toSet();
+    if (selectedEpisodeIds.length != _selectedFiles.length) {
+      if (mounted) {
+        setState(() {
+          _error = 'Chaque vidéo doit être associée à un épisode différent. Vous ne pouvez pas uploader plusieurs vidéos pour le même épisode.';
         });
       }
       return;
@@ -369,6 +388,42 @@ class _AdminEpisodeUploadScreenState extends State<AdminEpisodeUploadScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Limitations d\'upload',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '• Maximum 2 vidéos à la fois\n• Chaque vidéo doit être pour un épisode différent\n• Vous ne pouvez pas uploader plusieurs vidéos pour le même épisode',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   if (_selectedFiles.isNotEmpty)
                     Expanded(
@@ -470,7 +525,7 @@ class _AdminEpisodeUploadScreenState extends State<AdminEpisodeUploadScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _isUploading ? null : _pickVideos,
                           icon: const Icon(Icons.add),
-                          label: const Text('Sélectionner des vidéos'),
+                          label: const Text('Sélectionner des vidéos (max 2)'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,

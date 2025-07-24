@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
 import '../../models/movie.dart';
 import 'director_movies_screen.dart';
@@ -178,10 +179,10 @@ class _DirectorDashboardScreenState extends State<DirectorDashboardScreen> {
               if (authService.currentUser != null) {
                 await authService.signOut();
                 if (mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
+                  context.go('/login');
                 }
               } else {
-              Navigator.pushReplacementNamed(context, '/login');
+                context.go('/login');
               }
             },
             icon: Icon(

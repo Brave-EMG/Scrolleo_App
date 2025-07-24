@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
-import '../../models/movie.dart';
-import '../../services/reels_service.dart';
-import '../../widgets/reel_player.dart';
-import '../../models/episode.dart' as ep;
-import '../../services/episode_service.dart';
-import '../../services/auth_service.dart';
 import 'package:provider/provider.dart';
-import '../../services/favorites_service.dart';
+import 'package:go_router/go_router.dart';
+import '../../models/movie.dart';
+import '../../models/episode.dart' as ep;
+import '../../services/reels_service.dart';
 import '../../services/movie_service.dart';
+import '../../services/auth_service.dart';
+import '../../config/environment.dart';
+import 'package:video_player/video_player.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/reel_player.dart';
+import '../../services/episode_service.dart';
+import '../../services/favorites_service.dart';
 
 class ReelsScreen extends StatefulWidget {
   const ReelsScreen({Key? key}) : super(key: key);
@@ -53,7 +57,13 @@ class _ReelsScreenState extends State<ReelsScreen> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final userId = authService.currentUser?.id;
-      if (userId == null) throw Exception('Utilisateur non connecté');
+      if (userId == null) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'not_connected';
+        });
+        return;
+      }
 
       final movieService = Provider.of<MovieService>(context, listen: false);
       final movies = await movieService.getMovies();
@@ -62,9 +72,9 @@ class _ReelsScreenState extends State<ReelsScreen> {
 
       final episodes = await _episodeService.getFirstEpisodesForMovies(movies, userId);
       print('Nombre d\'épisodes trouvés : ${episodes.length}');
-      for (var ep in episodes) {
-        print('Episode chargé : ${ep.title} - ${ep.videoUrl}');
-      }
+              for (var episode in episodes) {
+          print('Episode chargé : ${episode.title} - ${episode.videoUrl}');
+        }
 
       setState(() {
         _movies = movies;
@@ -110,27 +120,75 @@ class _ReelsScreenState extends State<ReelsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'Erreur',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              if (_errorMessage == 'not_connected') ...[
+                Icon(
+                  Icons.account_circle_outlined,
+                  size: 80,
+                  color: Colors.grey[400],
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
+                const SizedBox(height: 24),
+                Text(
+                  'Connectez-vous pour voir vos recommandations',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadReels,
-                child: const Text('Réessayer'),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  'Nous avons besoin de vous connaître pour vous proposer du contenu personnalisé',
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    context.go('/login');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red[900],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'Se connecter',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  'Erreur',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _loadReels,
+                  child: const Text('Réessayer'),
+                ),
+              ],
             ],
           ),
         ),
@@ -181,7 +239,7 @@ class _ReelsScreenState extends State<ReelsScreen> {
             onPageChanged: _onPageChanged,
             itemCount: _reels.length,
             itemBuilder: (context, index) {
-              final episode = _reels[index];
+              final episode = _reels[index] as ep.Episode;
               final movie = _movies.firstWhere(
                 (m) => m.id == episode.movieId,
                 orElse: () => Movie(

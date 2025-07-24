@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../config/api_config.dart';
 import '../../config/environment.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AdminMoviesScreen extends StatefulWidget {
   const AdminMoviesScreen({Key? key}) : super(key: key);
@@ -425,15 +426,27 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
                 if (_contentStats.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: [
-                        _statCard('Total films', _contentStats['total_movies']?.toString() ?? '-', Icons.movie, Colors.blue),
-                        _statCard('Total épisodes', _contentStats['total_episodes']?.toString() ?? '-', Icons.video_library, Colors.orange),
-                        _statCard('Nouveaux films (30j)', _contentStats['new_movies_30d']?.toString() ?? '-', Icons.fiber_new, Colors.green),
-                        _statCard('Nouveaux épisodes (30j)', _contentStats['new_episodes_30d']?.toString() ?? '-', Icons.fiber_new, Colors.purple),
-                      ],
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isMobile = constraints.maxWidth < 600;
+                        final crossAxisCount = isMobile ? 2 : 4;
+                        final childAspectRatio = isMobile ? 1.3 : 1.8;
+                        
+                        return GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: childAspectRatio,
+                          children: [
+                            _statCard('Total films', _contentStats['total_movies']?.toString() ?? '-', Icons.movie, Colors.blue),
+                            _statCard('Total épisodes', _contentStats['total_episodes']?.toString() ?? '-', Icons.video_library, Colors.orange),
+                            _statCard('Nouveaux films (30j)', _contentStats['new_movies_30d']?.toString() ?? '-', Icons.fiber_new, Colors.green),
+                            _statCard('Nouveaux épisodes (30j)', _contentStats['new_episodes_30d']?.toString() ?? '-', Icons.fiber_new, Colors.purple),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   // Graphe barres nouveaux films/épisodes
@@ -564,25 +577,27 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
                     ),
                 ],
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Liste des films',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        'Liste des films',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                     ElevatedButton.icon(
                       onPressed: _showAddMovieDialog,
                       icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text('Ajouter un film', style: TextStyle(fontSize: 18)),
+                      label: const Text('Ajouter', style: TextStyle(fontSize: 16)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 6,
                       ),
                     ),
@@ -1137,81 +1152,167 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
         const SizedBox(height: 16),
         
         // Boutons d'action
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _showEditMovieDialog(movie),
-                icon: const Icon(Icons.edit, size: 16),
-                label: const Text('Modifier'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AdminManageEpisodesScreen(movie: movie),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = constraints.maxWidth < 600;
+            
+            if (isMobile) {
+              // Version mobile avec boutons empilés
+              return Column(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => _showEditMovieDialog(movie),
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: const Text('Modifier'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      minimumSize: const Size(double.infinity, 48),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.list, size: 16),
-                label: const Text('Gérer les épisodes'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _confirmDeleteMovie(movie),
-                icon: const Icon(Icons.delete, size: 16),
-                label: const Text('Supprimer'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-              ),
-            ),
-          ],
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AdminManageEpisodesScreen(movie: movie),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.list, size: 16),
+                    label: const Text('Gérer les épisodes'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: () => _confirmDeleteMovie(movie),
+                    icon: const Icon(Icons.delete, size: 16),
+                    label: const Text('Supprimer'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              // Version desktop avec boutons côte à côte
+              return Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showEditMovieDialog(movie),
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Modifier'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AdminManageEpisodesScreen(movie: movie),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.list, size: 16),
+                      label: const Text('Gérer les épisodes'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _confirmDeleteMovie(movie),
+                      icon: const Icon(Icons.delete, size: 16),
+                      label: const Text('Supprimer'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }
+          },
         ),
       ],
     );
   }
 
   Widget _statCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: 180,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: color.withOpacity(0.15),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
-            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-            const SizedBox(height: 4),
-            Text(title, style: const TextStyle(fontSize: 14)),
-          ],
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        final iconSize = isMobile ? 20.0 : 32.0;
+        final valueFontSize = isMobile ? 14.0 : 22.0;
+        final titleFontSize = isMobile ? 9.0 : 14.0;
+        final padding = isMobile ? 8.0 : 16.0;
+        
+        return Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Container(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: color.withOpacity(0.15),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: iconSize),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: valueFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: titleFontSize,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 } 

@@ -11,6 +11,7 @@ import 'dart:convert';
 //import 'package:intl/intl.dart';
 //import '../../config/api_config.dart';
 import '../../config/environment.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AdminDirectorsScreen extends StatefulWidget {
   const AdminDirectorsScreen({Key? key}) : super(key: key);
@@ -538,24 +539,26 @@ class _AdminDirectorsScreenState extends State<AdminDirectorsScreen> {
               ),
             // En-tête avec titre et bouton d'ajout
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Gestion des Réalisateurs',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    'Gestion des Réalisateurs',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-                    ElevatedButton.icon(
-                      onPressed: _onAddDirector,
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: _onAddDirector,
                   icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text('Ajouter un réalisateur', style: TextStyle(fontSize: 16)),
+                  label: const Text('Ajouter', style: TextStyle(fontSize: 14)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -590,76 +593,214 @@ class _AdminDirectorsScreenState extends State<AdminDirectorsScreen> {
 
             // Statistiques globales
             if (!_statsLoading && _directorStats.isNotEmpty) ...[
-              SizedBox(
-                height: 120,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildStatCard(
-                      'Nombre de réalisateurs',
-                      _directorOverview.length.toString(),
-                      Icons.people,
-                      Colors.blue,
-                    ),
-                    _buildStatCard(
-                      'Période',
-                      '${_directorStats['period'] ?? '-'} jours',
-                      Icons.calendar_today,
-                      Colors.orange,
-                    ),
-                    _buildStatCard(
-                      'Revenu par vue',
-                      '${_directorStats['revenuePerView'] ?? '-'} FCFA',
-                      Icons.monetization_on,
-                      Colors.green,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              if (_directorRevenue.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                const Text('Classement des réalisateurs et Top épisodes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingRowColor: MaterialStateProperty.all(Colors.grey[850]),
-                    columns: const [
-                      DataColumn(label: Text('Nom', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Email', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Films', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Vues totales', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Revenu total', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Top épisode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Vues épisode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                      DataColumn(label: Text('Revenu épisode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
-                    ],
-                    rows: _directorRevenue.map((d) {
-                      final topEp = _topEpisodes.firstWhere(
-                        (e) => (e['director_name'] ?? '') == (d['director_name'] ?? ''),
-                        orElse: () => null,
-                      );
-                      // Cherche le director dans _directors pour email et nb films
-                      final director = findDirectorByName(d['director_name'] ?? '');
-                      return DataRow(
-                        onSelectChanged: (_) {
-                          if (director != null) {
-                            _showDirectorDetailDialog(director, d, topEp);
-                          }
-                        },
-                        cells: [
-                          DataCell(Text(d['director_name'] ?? '-', style: const TextStyle(color: Colors.white))),
-                          DataCell(Text(director?.email ?? '-', style: const TextStyle(color: Colors.white))),
-                          DataCell(Text(director != null ? '${director.films}' : '-', style: const TextStyle(color: Colors.white))),
-                          DataCell(Text('${d['total_views'] ?? 0}', style: const TextStyle(color: Colors.white))),
-                          DataCell(Text('${d['estimated_revenue'] ?? 0} FCFA', style: const TextStyle(color: Colors.white))),
-                          DataCell(Text(topEp != null ? (topEp['episode_title'] ?? '-') : '-', style: const TextStyle(color: Colors.white))),
-                          DataCell(Text(topEp != null ? '${topEp['view_count'] ?? 0}' : '-', style: const TextStyle(color: Colors.white))),
-                          DataCell(Text(topEp != null ? '${topEp['estimated_revenue'] ?? 0} FCFA' : '-', style: const TextStyle(color: Colors.white))),
+              if (_directorStats.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isMobile = constraints.maxWidth < 600;
+                      final crossAxisCount = isMobile ? 2 : 3;
+                      final childAspectRatio = isMobile ? 1.3 : 1.8;
+                      
+                      return GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: childAspectRatio,
+                        children: [
+                          _buildStatCard(
+                            'Total réalisateurs',
+                            _directorStats['total_directors']?.toString() ?? '-',
+                            Icons.people,
+                            Colors.blue,
+                          ),
+                          _buildStatCard(
+                            'Période',
+                            '${_directorStats['period'] ?? '-'} jours',
+                            Icons.calendar_today,
+                            Colors.orange,
+                          ),
+                          _buildStatCard(
+                            'Revenu par vue',
+                            '${_directorStats['revenuePerView'] ?? '-'} FCFA',
+                            Icons.monetization_on,
+                            Colors.green,
+                          ),
                         ],
                       );
-                    }).toList(),
+                    },
                   ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              if (_directorRevenue.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text('Classement des réalisateurs et Top épisodes', 
+                  style: GoogleFonts.poppins(
+                    color: Colors.white, 
+                    fontWeight: FontWeight.bold, 
+                    fontSize: 18
+                  )
+                ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isMobile = constraints.maxWidth < 600;
+                    
+                    if (isMobile) {
+                      // Version mobile avec cartes
+                      return Column(
+                        children: _directorRevenue.map((d) {
+                          final topEp = _topEpisodes.firstWhere(
+                            (e) => (e['director_name'] ?? '') == (d['director_name'] ?? ''),
+                            orElse: () => null,
+                          );
+                          final director = findDirectorByName(d['director_name'] ?? '');
+                          
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            color: Colors.grey[850],
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: Colors.orange,
+                                        child: Text(
+                                          (d['director_name'] ?? '?')[0].toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              d['director_name'] ?? '-',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            Text(
+                                              director?.email ?? '-',
+                                              style: TextStyle(
+                                                color: Colors.grey[400],
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.movie, color: Colors.orange, size: 16),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${director?.films ?? 0} films',
+                                        style: const TextStyle(color: Colors.orange),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.visibility, color: Colors.blue, size: 16),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${d['total_views'] ?? 0} vues',
+                                        style: const TextStyle(color: Colors.blue),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.monetization_on, color: Colors.green, size: 16),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${d['estimated_revenue'] ?? 0} FCFA',
+                                        style: const TextStyle(color: Colors.green),
+                                      ),
+                                    ],
+                                  ),
+                                  if (topEp != null) ...[
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Top épisode: ${topEp['episode_title'] ?? '-'}',
+                                      style: const TextStyle(
+                                        color: Colors.purple,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${topEp['view_count'] ?? 0} vues - ${topEp['estimated_revenue'] ?? 0} FCFA',
+                                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    } else {
+                      // Version desktop avec DataTable
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          headingRowColor: MaterialStateProperty.all(Colors.grey[850]),
+                          columns: const [
+                            DataColumn(label: Text('Nom', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Email', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Films', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Vues totales', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Revenu total', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Top épisode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Vues épisode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Revenu épisode', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                          ],
+                          rows: _directorRevenue.map((d) {
+                            final topEp = _topEpisodes.firstWhere(
+                              (e) => (e['director_name'] ?? '') == (d['director_name'] ?? ''),
+                              orElse: () => null,
+                            );
+                            final director = findDirectorByName(d['director_name'] ?? '');
+                            return DataRow(
+                              onSelectChanged: (_) {
+                                if (director != null) {
+                                  _showDirectorDetailDialog(director, d, topEp);
+                                }
+                              },
+                              cells: [
+                                DataCell(Text(d['director_name'] ?? '-', style: const TextStyle(color: Colors.white))),
+                                DataCell(Text(director?.email ?? '-', style: const TextStyle(color: Colors.white))),
+                                DataCell(Text(director != null ? '${director.films}' : '-', style: const TextStyle(color: Colors.white))),
+                                DataCell(Text('${d['total_views'] ?? 0}', style: const TextStyle(color: Colors.white))),
+                                DataCell(Text('${d['estimated_revenue'] ?? 0} FCFA', style: const TextStyle(color: Colors.white))),
+                                DataCell(Text(topEp != null ? (topEp['episode_title'] ?? '-') : '-', style: const TextStyle(color: Colors.white))),
+                                DataCell(Text(topEp != null ? '${topEp['view_count'] ?? 0}' : '-', style: const TextStyle(color: Colors.white))),
+                                DataCell(Text(topEp != null ? '${topEp['estimated_revenue'] ?? 0} FCFA' : '-', style: const TextStyle(color: Colors.white))),
+                              ],
+                            );
+                          }).toList(),
+                        ),
+                      );
+                    }
+                  },
                 ),
               ],
             ],
@@ -692,48 +833,57 @@ class _AdminDirectorsScreenState extends State<AdminDirectorsScreen> {
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      width: 240,
-      margin: const EdgeInsets.only(right: 16),
-      child: Card(
-                        color: Colors.grey[900],
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        child: Padding(
-          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                children: [
-                  Icon(icon, color: color, size: 24),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        final iconSize = isMobile ? 16.0 : 24.0;
+        final valueFontSize = isMobile ? 14.0 : 24.0;
+        final titleFontSize = isMobile ? 9.0 : 14.0;
+        final padding = isMobile ? 8.0 : 20.0;
+        
+        return Card(
+          color: Colors.grey[900],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: EdgeInsets.all(padding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Icon(icon, color: color, size: iconSize),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey[400],
+                          fontSize: titleFontSize,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: valueFontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -756,89 +906,205 @@ class _AdminDirectorsScreenState extends State<AdminDirectorsScreen> {
     }
 
     return filteredDirectors.map((director) {
-      return Card(
-        margin: const EdgeInsets.only(bottom: 16),
-        color: Colors.grey[900],
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-                                children: [
-                                  CircleAvatar(
-                radius: 30,
-                                    backgroundColor: Colors.orange,
-                                    child: Text(
-                  director.name.isNotEmpty ? director.name[0].toUpperCase() : '?',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          director.name.isNotEmpty ? director.name : '(inconnu)',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                                        Text(
-                      director.email,
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.movie, color: Colors.orange, size: 16),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${director.films} films',
-                          style: const TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                  ],
-                ),
-              ),
-                              Row(
-                mainAxisSize: MainAxisSize.min,
-                                children: [
-                  IconButton(
-                    icon: const Icon(Icons.visibility, color: Colors.blue),
-                    tooltip: 'Voir les films',
-                                    onPressed: () => _showDirectorMovies(director.id),
-                                  ),
-                                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.orange),
-                                    tooltip: 'Modifier',
-                                    onPressed: () => _showEditDialog(director),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    tooltip: 'Supprimer',
-                                    onPressed: () => _showDeleteConfirmation(director),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 600;
+          
+          return Card(
+            margin: const EdgeInsets.only(bottom: 16),
+            color: Colors.grey[900],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: isMobile ? _buildMobileDirectorCard(director) : _buildDesktopDirectorCard(director),
+            ),
+          );
+        },
+      );
     }).toList();
+  }
+
+  Widget _buildMobileDirectorCard(Director director) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: Colors.orange,
+              child: Text(
+                director.name.isNotEmpty ? director.name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    director.name.isNotEmpty ? director.name : '(inconnu)',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    director.email,
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Icon(Icons.movie, color: Colors.orange, size: 16),
+            const SizedBox(width: 4),
+            Text(
+              '${director.films} films',
+              style: const TextStyle(
+                color: Colors.orange,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _showDirectorMovies(director.id),
+                icon: const Icon(Icons.visibility, size: 16),
+                label: const Text('Voir films', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _showEditDialog(director),
+                icon: const Icon(Icons.edit, size: 16),
+                label: const Text('Modifier', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () => _showDeleteConfirmation(director),
+                icon: const Icon(Icons.delete, size: 16),
+                label: const Text('Supprimer', style: TextStyle(fontSize: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopDirectorCard(Director director) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 30,
+          backgroundColor: Colors.orange,
+          child: Text(
+            director.name.isNotEmpty ? director.name[0].toUpperCase() : '?',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                director.name.isNotEmpty ? director.name : '(inconnu)',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                director.email,
+                style: TextStyle(
+                  color: Colors.grey[400],
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.movie, color: Colors.orange, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${director.films} films',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.visibility, color: Colors.blue),
+              tooltip: 'Voir les films',
+              onPressed: () => _showDirectorMovies(director.id),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.orange),
+              tooltip: 'Modifier',
+              onPressed: () => _showEditDialog(director),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              tooltip: 'Supprimer',
+              onPressed: () => _showDeleteConfirmation(director),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Director? findDirectorByName(String name) {

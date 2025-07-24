@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../models/user.dart';
@@ -50,7 +51,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: Text(
           'Paramètres',
-          style: TextStyle(
+          style: GoogleFonts.poppins(
+            color: Colors.white,
             fontSize: isMobile ? 18.0 : 20.0,
             fontWeight: FontWeight.bold,
           ),

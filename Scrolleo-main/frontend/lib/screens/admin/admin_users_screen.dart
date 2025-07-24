@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../config/api_config.dart';
 import '../../config/environment.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({Key? key}) : super(key: key);
@@ -283,19 +284,31 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 if (_userStats.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Wrap(
-                      spacing: 16,
-                      runSpacing: 16,
-                      children: [
-                        _statCard('Total utilisateurs', _userStats['total_users']?.toString() ?? '-', Icons.people, Colors.blue),
-                        _statCard('Admins', _userStats['admin_count']?.toString() ?? '-', Icons.admin_panel_settings, Colors.red),
-                        _statCard('Réalisateurs', _userStats['director_count']?.toString() ?? '-', Icons.movie, Colors.orange),
-                        _statCard('Utilisateurs simples', _userStats['user_count']?.toString() ?? '-', Icons.person, Colors.green),
-                        _statCard('Nouveaux (30j)', _userStats['new_users_30d']?.toString() ?? '-', Icons.fiber_new, Colors.purple),
-                        _statCard('Abonnés', _userStats['subscribed_users']?.toString() ?? '-', Icons.subscriptions, Colors.teal),
-                        _statCard('Abonnements actifs', _userStats['active_subscriptions']?.toString() ?? '-', Icons.check_circle, Colors.lightGreen),
-                        _statCard('Total coins', _userStats['total_coins']?.toString() ?? '-', Icons.monetization_on, Colors.amber),
-                      ],
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isMobile = constraints.maxWidth < 600;
+                        final crossAxisCount = isMobile ? 2 : 4;
+                        final childAspectRatio = isMobile ? 1.3 : 1.8;
+                        
+                        return GridView.count(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: childAspectRatio,
+                          children: [
+                            _buildStatCard('Total utilisateurs', _userStats['total_users']?.toString() ?? '-', Icons.people, Colors.blue),
+                            _buildStatCard('Admins', _userStats['admin_count']?.toString() ?? '-', Icons.admin_panel_settings, Colors.red),
+                            _buildStatCard('Réalisateurs', _userStats['director_count']?.toString() ?? '-', Icons.movie, Colors.orange),
+                            _buildStatCard('Utilisateurs simples', _userStats['user_count']?.toString() ?? '-', Icons.person, Colors.green),
+                            _buildStatCard('Nouveaux (30j)', _userStats['new_users_30d']?.toString() ?? '-', Icons.fiber_new, Colors.purple),
+                            _buildStatCard('Abonnés', _userStats['subscribed_users']?.toString() ?? '-', Icons.subscriptions, Colors.teal),
+                            _buildStatCard('Abonnements actifs', _userStats['active_subscriptions']?.toString() ?? '-', Icons.check_circle, Colors.lightGreen),
+                            _buildStatCard('Total coins', _userStats['total_coins']?.toString() ?? '-', Icons.monetization_on, Colors.amber),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   if (_subscriptions.isNotEmpty)
@@ -547,28 +560,57 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     );
   }
 
-  Widget _statCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: color.withOpacity(0.15),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
-            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
-            const SizedBox(height: 4),
-            Text(title, style: const TextStyle(fontSize: 14)),
-          ],
-        ),
-      ),
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        final iconSize = isMobile ? 20.0 : 32.0;
+        final valueFontSize = isMobile ? 14.0 : 22.0;
+        final titleFontSize = isMobile ? 9.0 : 14.0;
+        final padding = isMobile ? 8.0 : 16.0;
+        
+        return Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Container(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: color.withOpacity(0.15),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: iconSize),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: valueFontSize,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: titleFontSize,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 } 

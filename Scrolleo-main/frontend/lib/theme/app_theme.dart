@@ -2,6 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
+  // Styles de texte globaux avec Poppins
+  static TextStyle get titleLarge => GoogleFonts.poppins(
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  );
+
+  static TextStyle get screenTitle => GoogleFonts.poppins(
+    fontSize: 24,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  );
+
+  static TextStyle get titleMedium => GoogleFonts.poppins(
+    fontSize: 18,
+    fontWeight: FontWeight.w500,
+    color: Colors.white,
+  );
+
+  static TextStyle get bodyLarge => GoogleFonts.poppins(
+    fontSize: 16,
+    color: Colors.white,
+  );
+
+  static TextStyle get bodyMedium => GoogleFonts.poppins(
+    fontSize: 14,
+    color: Colors.grey[400],
+  );
   // Couleurs personnalisées
   static const Color redDeep = Color(0xFF9C1B1F); // Rouge profond
   static const Color whitePure = Color(0xFFFFFFFF); // Blanc pur

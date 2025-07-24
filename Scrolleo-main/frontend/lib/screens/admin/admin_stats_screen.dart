@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:streaming_platform/services/auth_service.dart';
 import '../../config/api_config.dart';
 import '../../config/environment.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AdminStatsScreen extends StatefulWidget {
   final void Function(int index)? onCardTap;
@@ -146,70 +147,100 @@ class _AdminStatsScreenState extends State<AdminStatsScreen> {
     final totalFavorites = engagementOverview['total_favorites']?.toString() ?? '0';
     final totalLikes = engagementOverview['total_likes']?.toString() ?? '0';
     final uniqueViewers = engagementOverview['unique_viewers']?.toString() ?? '0';
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      children: [
-        GestureDetector(
-          onTap: () => widget.onCardTap?.call(0),
-          child: _buildStatCard('Utilisateurs', totalUsers, Icons.people, Colors.blue),
-        ),
-        _buildStatCard('Revenus', '$totalRevenue FCFA', Icons.attach_money, Colors.green),
-        _buildStatCard('Vues', totalViews, Icons.visibility, Colors.orange),
-        GestureDetector(
-          onTap: () => widget.onCardTap?.call(2),
-          child: _buildStatCard('Contenu', '$totalMovies films', Icons.movie, Colors.purple),
-        ),
-        _buildStatCard('Favoris', totalFavorites, Icons.favorite, Colors.pink),
-        _buildStatCard('Likes', totalLikes, Icons.thumb_up, Colors.lightBlue),
-        _buildStatCard('Spectateurs uniques', uniqueViewers, Icons.person_pin, Colors.teal),
-      ],
+    
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        final crossAxisCount = isMobile ? 2 : 3;
+        final childAspectRatio = isMobile ? 1.2 : 1.5;
+        
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: childAspectRatio,
+          children: [
+            GestureDetector(
+              onTap: () => widget.onCardTap?.call(0),
+              child: _buildStatCard('Utilisateurs', totalUsers, Icons.people, Colors.blue),
+            ),
+            _buildStatCard('Revenus', '$totalRevenue FCFA', Icons.attach_money, Colors.green),
+            _buildStatCard('Vues', totalViews, Icons.visibility, Colors.orange),
+            GestureDetector(
+              onTap: () => widget.onCardTap?.call(2),
+              child: _buildStatCard('Contenu', '$totalMovies films', Icons.movie, Colors.purple),
+            ),
+            _buildStatCard('Favoris', totalFavorites, Icons.favorite, Colors.pink),
+            _buildStatCard('Likes', totalLikes, Icons.thumb_up, Colors.lightBlue),
+            _buildStatCard('Spectateurs uniques', uniqueViewers, Icons.person_pin, Colors.teal),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withOpacity(0.7),
-              color,
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        final iconSize = isMobile ? 24.0 : 32.0;
+        final valueFontSize = isMobile ? 16.0 : 22.0;
+        final titleFontSize = isMobile ? 10.0 : 14.0;
+        final padding = isMobile ? 8.0 : 16.0;
+        
+        return Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: Colors.white),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+          child: Container(
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withOpacity(0.7),
+                  color,
+                ],
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: iconSize, color: Colors.white),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: valueFontSize,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: titleFontSize,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

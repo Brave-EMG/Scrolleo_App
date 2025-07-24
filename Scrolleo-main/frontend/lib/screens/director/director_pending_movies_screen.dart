@@ -82,23 +82,25 @@ class _DirectorPendingMoviesScreenState extends State<DirectorPendingMoviesScree
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Films en attente',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: const Text(
+                    'Films en attente',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: _fetchPendingMovies,
                   icon: const Icon(Icons.refresh, size: 24),
-                  label: const Text('Rafraîchir', style: TextStyle(fontSize: 18)),
+                  label: const Text('Rafraîchir', style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
               ],

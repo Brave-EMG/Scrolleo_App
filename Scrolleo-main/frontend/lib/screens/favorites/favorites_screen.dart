@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../theme/app_theme.dart';
 import '../../providers/favorites_provider.dart';
 import '../../models/movie.dart';
 import '../../services/auth_service.dart';
@@ -107,13 +109,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    const Text(
+                    Text(
                       'Mes Favoris',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTheme.titleLarge,
                     ),
                     const Spacer(),
                     IconButton(
@@ -145,20 +143,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               color: Colors.amber,
                             ),
                             const SizedBox(height: 16),
-                            const Text(
+                            Text(
                               'Vous n\'avez pas encore de favoris',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                              ),
+                              style: AppTheme.titleMedium,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Explorez notre catalogue et ajoutez des films à vos favoris',
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 14,
-                              ),
+                              style: AppTheme.bodyMedium,
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -225,9 +217,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           color: Colors.red[900],
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Tendance',
-                          style: TextStyle(
+                          style: AppTheme.bodyMedium.copyWith(
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -249,19 +241,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                   children: [
                     Text(
                       movie.title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: AppTheme.titleMedium.copyWith(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       movie.genres.join(' • '),
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
+                      style: AppTheme.bodyMedium,
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -270,9 +257,8 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         const SizedBox(width: 4),
                         Text(
                           movie.rating.toString(),
-                          style: const TextStyle(
+                          style: AppTheme.bodyMedium.copyWith(
                             color: Colors.white,
-                            fontSize: 14,
                           ),
                         ),
                       ],

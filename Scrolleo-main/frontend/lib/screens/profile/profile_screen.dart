@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../services/auth_service.dart';
-import '../../theme/app_theme.dart';
+import '../../theme/app_theme.dart' as theme;
+import 'package:google_fonts/google_fonts.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -15,16 +15,15 @@ class ProfileScreen extends StatelessWidget {
         final user = authService.currentUser;
         final isLoggedIn = authService.isAuthenticated && user != null;
         final screenWidth = MediaQuery.of(context).size.width;
-        final isMobile = screenWidth < AppTheme.mobileBreakpoint;
+        final isMobile = screenWidth < theme.AppTheme.mobileBreakpoint;
 
         return Scaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(
             title: Text(
               'Profil',
-              style: TextStyle(
+              style: theme.AppTheme.screenTitle.copyWith(
                 fontSize: isMobile ? 18.0 : 20.0,
-                fontWeight: FontWeight.bold,
                 color: Colors.red[900],
               ),
             ),
@@ -52,7 +51,7 @@ class ProfileScreen extends StatelessWidget {
                       SizedBox(height: isMobile ? 12.0 : 16.0),
                       Text(
                         isLoggedIn ? (user?.name ?? 'Utilisateur') : 'Non connecté',
-                        style: TextStyle(
+                        style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontSize: isMobile ? 20.0 : 24.0,
                           fontWeight: FontWeight.bold,
@@ -62,7 +61,7 @@ class ProfileScreen extends StatelessWidget {
                         SizedBox(height: isMobile ? 4.0 : 8.0),
                         Text(
                           user!.email!,
-                          style: TextStyle(
+                          style: GoogleFonts.poppins(
                             color: Colors.grey[400],
                             fontSize: isMobile ? 14.0 : 16.0,
                           ),
@@ -80,12 +79,12 @@ class ProfileScreen extends StatelessWidget {
                               vertical: isMobile ? 8.0 : 12.0,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppTheme.mediumRadius),
+                              borderRadius: BorderRadius.circular(theme.AppTheme.mediumRadius),
                             ),
                           ),
                           child: Text(
                             'Se connecter',
-                            style: TextStyle(
+                            style: GoogleFonts.poppins(
                               fontSize: isMobile ? 14.0 : 16.0,
                               fontWeight: FontWeight.bold,
                             ),
@@ -136,20 +135,20 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 SizedBox(height: isMobile ? 24.0 : 32.0),
                 // Section des informations utilisateur
-                if (isLoggedIn && user != null) ...[
-                  _buildInfoSection(
-                    context,
-                    'Informations du compte',
-                    [
-                      _buildInfoRow('ID Utilisateur', user.id.toString(), isMobile),
-                      _buildInfoRow('Nom d\'utilisateur', user.name, isMobile),
-                      if (user.email != null)
-                        _buildInfoRow('Email', user.email!, isMobile),
-                      _buildInfoRow('Rôle', user.role ?? 'Utilisateur', isMobile),
-                    ],
-                    isMobile,
-                  ),
-                ],
+                // if (isLoggedIn && user != null) ...[
+                //   _buildInfoSection(
+                //     context,
+                //     'Informations du compte',
+                //     [
+                //       _buildInfoRow('ID Utilisateur', user.id.toString(), isMobile),
+                //       _buildInfoRow('Nom d\'utilisateur', user.name, isMobile),
+                //       if (user.email != null)
+                //         _buildInfoRow('Email', user.email!, isMobile),
+                //       _buildInfoRow('Rôle', user.role ?? 'Utilisateur', isMobile),
+                //     ],
+                //     isMobile,
+                //   ),
+                // ],
                 SizedBox(height: isMobile ? 24.0 : 32.0),
                 // Bouton de déconnexion
                 if (isLoggedIn) ...[
@@ -169,12 +168,12 @@ class ProfileScreen extends StatelessWidget {
                           vertical: isMobile ? 12.0 : 16.0,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.mediumRadius),
+                          borderRadius: BorderRadius.circular(theme.AppTheme.mediumRadius),
                         ),
                       ),
                       child: Text(
                         'Se déconnecter',
-                        style: TextStyle(
+                        style: theme.AppTheme.bodyLarge.copyWith(
                           fontSize: isMobile ? 16.0 : 18.0,
                           fontWeight: FontWeight.bold,
                         ),
@@ -201,7 +200,7 @@ class ProfileScreen extends StatelessWidget {
     return Card(
       color: Colors.grey[900],
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.mediumRadius),
+        borderRadius: BorderRadius.circular(theme.AppTheme.mediumRadius),
       ),
       child: ListTile(
         leading: Icon(
@@ -236,7 +235,7 @@ class ProfileScreen extends StatelessWidget {
     return Card(
       color: Colors.grey[900],
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.mediumRadius),
+        borderRadius: BorderRadius.circular(theme.AppTheme.mediumRadius),
       ),
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),

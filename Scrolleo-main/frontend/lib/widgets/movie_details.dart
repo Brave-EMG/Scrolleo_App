@@ -370,6 +370,91 @@ class _MovieDetailsState extends State<MovieDetails> {
     }
   }
 
+  String _getValidImageUrl(String url) {
+    if (url.isEmpty) {
+      return 'https://via.placeholder.com/300x400?text=No+Image';
+    }
+    if (url.startsWith('http')) {
+      return url;
+    }
+    final cleanUrl = url.trim();
+    if (cleanUrl.isEmpty) {
+      return 'https://via.placeholder.com/300x400?text=No+Image';
+    }
+    final baseUrl = Environment.apiBaseUrl.replaceAll('/api','');
+    if (!cleanUrl.startsWith('/uploads/')) {
+      final cleanPath = cleanUrl.replaceAll('/uploads/', '');
+      return '$baseUrl/uploads/$cleanPath';
+    }
+    return '$baseUrl$cleanUrl';
+  }
+
+  String _getThumbnailUrl(String? thumbnailUrl) {
+    if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
+      return '';
+    }
+    
+    // Si c'est une URL CloudFront, utiliser le proxy backend
+    if (thumbnailUrl.contains('cloudfront.net')) {
+      // Extraire l'ID de l'épisode de l'URL
+      final episodeId = _extractEpisodeIdFromThumbnailUrl(thumbnailUrl);
+      if (episodeId != null) {
+        return '${Environment.apiBaseUrl}/episodes/$episodeId/thumbnail';
+      }
+    }
+    
+    return thumbnailUrl;
+  }
+
+  String? _extractEpisodeIdFromThumbnailUrl(String url) {
+    // Exemple: https://dm23yf4cycj8r.cloudfront.net/thumbnails/2/ab50ed3c-6a0e-4707-bffe-b6d64e7c96e1.jpg
+    // Extraire le numéro après /thumbnails/
+    final regex = RegExp(r'/thumbnails/(\d+)/');
+    final match = regex.firstMatch(url);
+    return match?.group(1);
+  }
+
+  Future<bool> _testImageUrl(String url) async {
+    try {
+      final response = await http.head(Uri.parse(url));
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Widget _buildFallbackWidget(int episodeNumber) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey[700],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.image,
+              color: Colors.grey[400],
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '$episodeNumber',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -542,6 +627,9 @@ class _MovieDetailsState extends State<MovieDetails> {
                       final episodeNumber = episode['episode_number'] ?? (index + 1);
                       final isSelected = index == 0; // Premier épisode sélectionné par défaut
                       
+                      // Debug: Vérifier les données de l'épisode
+                      print('[DEBUG] MovieDetails - Episode $episodeNumber - thumbnail_url: ${episode['thumbnail_url']}');
+                      
                       // Vérifier l'accès à l'épisode en temps réel
                       return FutureBuilder<Map<String, dynamic>>(
                         future: _episodeService.checkEpisodeAccess(episode['episode_id'].toString()),
@@ -586,17 +674,31 @@ class _MovieDetailsState extends State<MovieDetails> {
                           ),
                           child: Stack(
                             children: [
-                              // Numéro de l'épisode centré
-                              Center(
-                                child: Text(
-                                  '$episodeNumber',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                              // Miniature de l'épisode (si disponible)
+                              if (episode['thumbnail_url'] != null && episode['thumbnail_url'].toString().isNotEmpty)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: FutureBuilder<bool>(
+                                    future: _testImageUrl(_getThumbnailUrl(episode['thumbnail_url'])),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData && snapshot.data == true) {
+                                        return Image.network(
+                                          _getThumbnailUrl(episode['thumbnail_url']),
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) {
+                                            return _buildFallbackWidget(episodeNumber);
+                                          },
+                                        );
+                                      } else {
+                                        return _buildFallbackWidget(episodeNumber);
+                                      }
+                                    },
                                   ),
-                                ),
-                              ),
+                                )
+                              else
+                                _buildFallbackWidget(episodeNumber),
                               // Icône de lecture pour l'épisode sélectionné
                               if (isSelected)
                                 Positioned(

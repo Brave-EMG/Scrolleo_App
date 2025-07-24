@@ -274,7 +274,13 @@ class EpisodeListState extends State<EpisodeList> {
               final isFree = episode['is_free'] ?? false;
               final episodeNumber = episode['episode_number'] ?? (index + 1);
               
-
+              // Debug: Vérifier les données de l'épisode
+              print('[DEBUG] Episode $episodeNumber - thumbnail_url: ${episode['thumbnail_url']}');
+              print('[DEBUG] Episode $episodeNumber - accessInfo episode: ${accessInfo?['episode']?['thumbnail_url']}');
+              
+              // Utiliser la miniature de accessInfo si disponible
+              final thumbnailUrl = episode['thumbnail_url'] ?? accessInfo?['episode']?['thumbnail_url'];
+              print('[DEBUG] Episode $episodeNumber - thumbnailUrl final: $thumbnailUrl');
               
               return GestureDetector(
                   onTap: () {
@@ -286,7 +292,7 @@ class EpisodeListState extends State<EpisodeList> {
                       }
                     }
                   },
-                child: Container(
+                  child: Container(
                   decoration: BoxDecoration(
                     color: isSelected ? Colors.grey[600] : Colors.grey[800],
                     borderRadius: BorderRadius.circular(8),
@@ -295,16 +301,17 @@ class EpisodeListState extends State<EpisodeList> {
                   child: Stack(
                     children: [
                       // Miniature de l'épisode (si disponible)
-                      if (episode['thumbnail_url'] != null)
+                      if (thumbnailUrl != null)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
-                            episode['thumbnail_url'],
+                            thumbnailUrl,
                             width: double.infinity,
                             height: double.infinity,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               // Fallback vers le numéro si l'image ne charge pas
+                              print('[DEBUG] Erreur chargement image Episode $episodeNumber: $error');
                               return Center(
                                 child: Text(
                                   '$episodeNumber',

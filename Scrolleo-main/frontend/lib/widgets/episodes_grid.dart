@@ -298,6 +298,13 @@ class _EpisodeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Debug: Vérifier les données de l'épisode
+    print('[DEBUG] EpisodesGrid - Episode $episodeNumber - thumbnail_url: ${episode['thumbnail_url']}');
+    
+    // Utiliser la miniature de accessInfo si disponible
+    final thumbnailUrl = episode['thumbnail_url'];
+    print('[DEBUG] EpisodesGrid - Episode $episodeNumber - thumbnailUrl final: $thumbnailUrl');
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -309,16 +316,17 @@ class _EpisodeButton extends StatelessWidget {
           alignment: Alignment.center,
           children: [
             // Miniature de l'épisode (si disponible)
-            if (episode['thumbnail_url'] != null)
+            if (thumbnailUrl != null && thumbnailUrl.toString().isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
-                  episode['thumbnail_url'],
+                  thumbnailUrl,
                   width: double.infinity,
                   height: double.infinity,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     // Fallback vers le numéro si l'image ne charge pas
+                    print('[DEBUG] Erreur chargement image Episode $episodeNumber: $error');
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

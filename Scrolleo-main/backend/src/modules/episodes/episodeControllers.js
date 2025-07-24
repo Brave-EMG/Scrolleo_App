@@ -832,3 +832,48 @@ export class EpisodeController {
         }
     }
 }
+
+// Endpoint proxy pour servir les miniatures
+const getThumbnailProxy = async (req, res) => {
+  try {
+    const { episodeId } = req.params;
+    
+    // Récupérer l'épisode pour obtenir l'URL de la miniature
+    const [episode] = await pool.query(
+      'SELECT thumbnail_url FROM episodes WHERE episode_id = ?',
+      [episodeId]
+    );
+    
+    if (!episode || !episode[0] || !episode[0].thumbnail_url) {
+      return res.status(404).json({ error: 'Miniature non trouvée' });
+    }
+    
+    const thumbnailUrl = episode[0].thumbnail_url;
+    
+    // Si c'est une URL CloudFront, la servir directement
+    if (thumbnailUrl.includes('cloudfront.net')) {
+      // Rediriger vers l'URL CloudFront avec les bons headers CORS
+      res.set({
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      // Rediriger vers l'URL CloudFront
+      return res.redirect(thumbnailUrl);
+    }
+    
+    // Si c'est une URL locale, la servir directement
+    res.json({ thumbnail_url: thumbnailUrl });
+    
+  } catch (error) {
+    console.error('Erreur lors de la récupération de la miniature:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+module.exports = {
+  // ... existing exports ...
+  getThumbnailProxy,
+};

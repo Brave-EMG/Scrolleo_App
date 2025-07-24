@@ -978,45 +978,56 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     padding: EdgeInsets.all(isMobile ? 6.0 : 8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          movie.title,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: isMobile ? 12.0 : 14.0,
+                        Flexible(
+                          child: Text(
+                            movie.title,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: isMobile ? 12.0 : 14.0,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
                         if (movie.genres.isNotEmpty) ...[
                           SizedBox(height: isMobile ? 2.0 : 4.0),
-                          Text(
-                            movie.genres.first,
-                            style: TextStyle(
-                              color: Colors.orange,
-                              fontSize: isMobile ? 10.0 : 12.0,
+                          Flexible(
+                            child: Text(
+                              movie.genres.first,
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontSize: isMobile ? 10.0 : 12.0,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                         const Spacer(),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              '${movie.views} vues',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: isMobile ? 8.0 : 10.0,
+                            Flexible(
+                              child: Text(
+                                '${movie.views} vues',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: isMobile ? 8.0 : 10.0,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            Text(
-                              '${movie.likes} likes',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: isMobile ? 8.0 : 10.0,
+                            Flexible(
+                              child: Text(
+                                '${movie.likes} likes',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: isMobile ? 8.0 : 10.0,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],

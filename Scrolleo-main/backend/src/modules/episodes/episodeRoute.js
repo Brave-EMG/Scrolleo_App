@@ -61,6 +61,12 @@ router.post(
     episodeController.unlockEpisode
 );
 
+// Route proxy pour les miniatures (contourner CORS)
+router.get(
+    '/:episodeId/thumbnail',
+    episodeController.getThumbnailProxy
+);
+
 // Route pour configurer automatiquement les épisodes d'un film
 router.post(
     '/movie/:movieId/configure',

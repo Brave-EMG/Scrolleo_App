@@ -4,10 +4,12 @@ class Environment {
   static bool get isProduction => env == 'production';
   // API URLs
   // flutter run --dart-define=ENV=local
-  static const String localApi = 'http://localhost:3000/api';
+ // static const String localApi = 'http://localhost:3000/api';
   // flutter run --dart-define=ENV=production
-  static const String productionApi = 'https://scrolleo-backend.onrender.com/api'; // À changer avec l'URL Render
- 
+ // static const String productionApi = 'https://scrolleo-backend.onrender.com/api'; // À changer avec l'URL Render
+  static const String productionApi = 'https://scrolleo.onrender.com/api'; // À changer avec l'URL Render
+  static const String localApi = 'https://scrolleo.onrender.com/api'; // À changer avec l'URL Render
+
   // Configuration actuelle
   static String get apiBaseUrl => isProduction ? productionApi : localApi;
 

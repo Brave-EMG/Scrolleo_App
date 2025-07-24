@@ -178,7 +178,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                           _controller.value.isPlaying
                               ? Icons.pause
                               : Icons.play_arrow,
-                          size: 50,
+                          size: 40,
                   color: Colors.white,
                 ),
                 onPressed: () {

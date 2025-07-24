@@ -45,7 +45,7 @@ class ProfileScreen extends StatelessWidget {
                         backgroundColor: Colors.grey[800],
                         child: Icon(
                           Icons.person,
-                          size: isMobile ? 40.0 : 50.0,
+                          size: isMobile ? 32.0 : 40.0,
                           color: Colors.white,
                         ),
                       ),

@@ -444,7 +444,7 @@ class _DirectorMovieFormScreenState extends State<DirectorMovieFormScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Exclusivité SCROLLEO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const Text('Exclusivité', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               Row(
                 children: [
                   Switch(

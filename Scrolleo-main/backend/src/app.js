@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com', 'http://localhost:3001'] // Remplacer par votre domaine frontend en production
+    ? ['https://scrolleo.brave-emg.com', 'http://localhost:3001'] // Remplacer par votre domaine frontend en production
     : ['http://localhost:5000', 'http://localhost:5001', 'http://localhost:3000'], // En développement, autoriser localhost
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],

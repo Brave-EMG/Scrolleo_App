@@ -699,7 +699,7 @@ class _AdminMoviesScreenState extends State<AdminMoviesScreen> {
                       prefixIcon: const Icon(Icons.search, color: Colors.orange),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    },
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),

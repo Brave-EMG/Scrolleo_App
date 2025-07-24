@@ -491,8 +491,8 @@ export const getPaymentParams = async (req, res) => {
         console.log('💾 Paiement créé avec ID:', paymentId);
 
         // Construire l'URL de callback
-        const baseUrl = process.env.API_URL || 'http://localhost:3000';
-        const callbackUrl = `${baseUrl.replace(/\/$/, '')}/payments/webhook`;
+        const baseUrl = process.env.API_URL || 'https://scrolleo.onrender.com';
+        const callbackUrl = `${baseUrl.replace(/\/$/, '')}/api/payments/webhook`;
         console.log('🔗 URL de callback:', callbackUrl);
 
         // Préparer les paramètres Feexpay
@@ -647,6 +647,7 @@ export const getSubscriptionStatus = async (req, res) => {
 // POST /payments/webhook : gérer le webhook pour créditer les coins
 export const handleWebhook = async (req, res) => {
     console.log('=== DÉBUT WEBHOOK FEEXPAY ===');
+    console.log('🌐 URL appelée:', req.originalUrl);
     console.log('📥 Headers reçus:', JSON.stringify(req.headers, null, 2));
     console.log('📥 Body reçu:', JSON.stringify(req.body, null, 2));
     
@@ -878,4 +879,98 @@ export const checkPaymentStatus = async (req, res) => {
         console.error('Error checking payment status:', error);
         res.status(500).json({ error: 'Internal server error' });
   }
+};
+
+// Route d'administration pour forcer le traitement d'un paiement (pour les admins)
+export const forceProcessPayment = async (req, res) => {
+    try {
+        const { paymentId } = req.params;
+        const userEmail = req.user.email;
+        
+        // Vérifier que l'utilisateur est admin
+        const userResult = await pool.query(
+            'SELECT user_id, role FROM users WHERE email = $1',
+            [userEmail]
+        );
+        
+        if (userResult.rows.length === 0 || userResult.rows[0].role !== 'admin') {
+            return res.status(403).json({ error: 'Accès refusé - Admin requis' });
+        }
+
+        // Récupérer les détails du paiement
+        const paymentResult = await pool.query(
+            'SELECT user_id, coins_added, type, amount, status FROM payments WHERE id = $1',
+            [paymentId]
+        );
+
+        if (paymentResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Paiement non trouvé' });
+        }
+
+        const payment = paymentResult.rows[0];
+        
+        if (payment.status === 'success') {
+            return res.status(400).json({ error: 'Le paiement est déjà traité' });
+        }
+
+        console.log('🔄 Traitement forcé du paiement ID:', paymentId);
+        console.log('👤 User ID:', payment.user_id);
+        console.log('🪙 Coins à ajouter:', payment.coins_added);
+
+        // Démarrer une transaction
+        await pool.query('BEGIN');
+
+        // Mettre à jour le statut du paiement
+        await pool.query(
+            'UPDATE payments SET status = $1 WHERE id = $2',
+            ['success', paymentId]
+        );
+
+        // Créditer les coins
+        await pool.query(
+            `INSERT INTO coins (user_id, balance)
+             VALUES ($1, $2)
+             ON CONFLICT (user_id)
+             DO UPDATE SET balance = coins.balance + $2`,
+            [payment.user_id, payment.coins_added]
+        );
+
+        // Enregistrer la transaction
+        await pool.query(
+            'INSERT INTO coin_transactions (user_id, amount, reason) VALUES ($1, $2, $3)',
+            [payment.user_id, payment.coins_added, 'Achat de coins (traitement forcé)']
+        );
+
+        // Valider la transaction
+        await pool.query('COMMIT');
+
+        // Envoyer l'email de confirmation
+        const userEmailForInvoice = await getUserEmail(payment.user_id);
+        const invoiceText = generateInvoiceText({
+            userEmail: userEmailForInvoice,
+            amount: payment.amount,
+            transactionId: `FORCED-${paymentId}`,
+            type: payment.type,
+            date: new Date().toLocaleString(),
+            coinsAdded: payment.coins_added
+        });
+        
+        await sendEmail({
+            to: userEmail,
+            subject: 'Votre facture de paiement - Scrolleo',
+            html: invoiceText
+        });
+
+        console.log('✅ Paiement forcé traité avec succès');
+        res.json({ 
+            message: 'Paiement traité avec succès',
+            paymentId: paymentId,
+            coinsAdded: payment.coins_added
+        });
+
+    } catch (error) {
+        await pool.query('ROLLBACK');
+        console.error('Erreur lors du traitement forcé:', error);
+        res.status(500).json({ error: 'Erreur serveur', details: error.message });
+    }
 }; 

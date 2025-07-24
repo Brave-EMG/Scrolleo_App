@@ -6,7 +6,8 @@ import {
     getCoinPacks,
     getPaymentParams,
     handleWebhook,
-    checkPaymentStatus
+    checkPaymentStatus,
+    forceProcessPayment
 } from './paymentsController.js';
 import authMiddleware from '../auth/authMiddleware.js';
 
@@ -32,5 +33,8 @@ router.get('/history', getPaymentHistory);
 
 // Vérifier l'état d'un paiement
 router.get('/status/:paymentId', checkPaymentStatus);
+
+// Route d'administration pour forcer le traitement d'un paiement
+router.post('/force-process/:paymentId', forceProcessPayment);
 
 export default router; 

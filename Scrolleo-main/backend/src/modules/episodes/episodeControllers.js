@@ -1,5 +1,7 @@
 import { Episode } from './episodeModels.js';
 import db from '../../config/database.js';
+import fetch from 'node-fetch';
+
 const { pool } = db;
 
 export class EpisodeController {
@@ -843,32 +845,70 @@ export class EpisodeController {
                 [episodeId]
             );
             
-            if (!episodeResult.rows || episodeResult.rows.length === 0 || !episodeResult.rows[0].thumbnail_url) {
-                return res.status(404).json({ error: 'Miniature non trouvée' });
+            let thumbnailUrl = null;
+            if (episodeResult.rows.length > 0) {
+                thumbnailUrl = episodeResult.rows[0].thumbnail_url;
             }
             
-            const thumbnailUrl = episodeResult.rows[0].thumbnail_url;
+            // Si pas d'URL ou colonne n'existe pas, utiliser une URL par défaut
+            if (!thumbnailUrl) {
+                thumbnailUrl = `https://dm23yf4cycj8r.cloudfront.net/thumbnails/${episodeId}/default-thumbnail.jpg`;
+            }
             
-            // Si c'est une URL CloudFront, la servir directement
-            if (thumbnailUrl.includes('cloudfront.net')) {
-                // Rediriger vers l'URL CloudFront avec les bons headers CORS
+            // Télécharger l'image depuis CloudFront et la servir directement
+            try {
+                const response = await fetch(thumbnailUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const buffer = await response.arrayBuffer();
+                const contentType = response.headers.get('content-type') || 'image/jpeg';
+                
+                // Définir les headers CORS
                 res.set({
                     'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': 'GET, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type',
-                    'Cache-Control': 'public, max-age=3600'
+                    'Cache-Control': 'public, max-age=3600',
+                    'Content-Type': contentType,
+                    'Content-Length': buffer.byteLength
                 });
                 
-                // Rediriger vers l'URL CloudFront
-                return res.redirect(thumbnailUrl);
+                // Envoyer l'image
+                res.send(Buffer.from(buffer));
+                
+            } catch (fetchError) {
+                console.error('Erreur lors du téléchargement de l\'image:', fetchError);
+                
+                // En cas d'erreur, retourner une image par défaut
+                const defaultImageUrl = `https://dm23yf4cycj8r.cloudfront.net/thumbnails/${episodeId}/default-thumbnail.jpg`;
+                
+                res.set({
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type',
+                    'Cache-Control': 'public, max-age=3600',
+                    'Content-Type': 'image/jpeg'
+                });
+                
+                // Rediriger vers l'image par défaut
+                return res.redirect(defaultImageUrl);
             }
-            
-            // Si c'est une URL locale, la servir directement
-            res.json({ thumbnail_url: thumbnailUrl });
             
         } catch (error) {
             console.error('Erreur lors de la récupération de la miniature:', error);
-            res.status(500).json({ error: 'Erreur serveur' });
+            
+            // En cas d'erreur, retourner une image par défaut
+            const defaultUrl = `https://dm23yf4cycj8r.cloudfront.net/thumbnails/${req.params.episodeId}/default-thumbnail.jpg`;
+            res.set({
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Cache-Control': 'public, max-age=3600'
+            });
+            return res.redirect(defaultUrl);
         }
     }
 }

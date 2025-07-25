@@ -314,27 +314,62 @@ class _TikTokStylePlayerState extends State<TikTokStylePlayer> {
             itemCount: _episodes.length,
             itemBuilder: (context, index) {
               final episode = _episodes[index];
-              print('[DEBUG] TikTokStylePlayer affiche episodeId=${episode['episode_id'] ?? episode['id']}');
-              if (episode['video_url'] == null || episode['video_url'].toString().isEmpty) {
-                return Center(
-                  child: Text(
-                    'Aucune vidéo disponible pour cet épisode.',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                );
-              }
-              return ReelPlayer(
-                episode: Episode.fromJson(episode),
-                isActive: true,
-                onShare: () async {
-                  final movieService = MovieService();
-                  await movieService.shareMovie(
-                    episode['movie_id'].toString(),
-                    episodeId: episode['episode_id']?.toString() ?? episode['id']?.toString(),
+              final episodeId = episode['episode_id'] ?? episode['id'];
+              print('[DEBUG] TikTokStylePlayer affiche episodeId=$episodeId');
+              
+              // Vérifier l'accès à l'épisode
+              return FutureBuilder<Map<String, dynamic>>(
+                future: _episodeService.checkEpisodeAccess(episodeId.toString()),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.orange),
+                    );
+                  }
+                  
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Erreur lors de la vérification d\'accès',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                    );
+                  }
+                  
+                  final hasAccess = snapshot.hasData && snapshot.data!['hasAccess'] == true;
+                  final isFree = episode['is_free'] == true;
+                  final isUnlocked = isFree || hasAccess;
+                  
+                  // Si l'épisode n'est pas débloqué, afficher l'écran de paiement
+                  if (!isUnlocked) {
+                    return _buildPaymentScreen(episode, snapshot.data!);
+                  }
+                  
+                  // Si pas de vidéo disponible
+                  if (episode['video_url'] == null || episode['video_url'].toString().isEmpty) {
+                    return Center(
+                      child: Text(
+                        'Aucune vidéo disponible pour cet épisode.',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                    );
+                  }
+                  
+                  // Épisode débloqué avec vidéo
+                  return ReelPlayer(
+                    episode: Episode.fromJson(episode),
+                    isActive: true,
+                    onShare: () async {
+                      final movieService = MovieService();
+                      await movieService.shareMovie(
+                        episode['movie_id'].toString(),
+                        episodeId: episode['episode_id']?.toString() ?? episode['id']?.toString(),
+                      );
+                    },
+                    movieId: episode['movie_id'].toString(),
+                    movieTitle: episode['movie_title'] ?? episode['title'] ?? '',
                   );
                 },
-                movieId: episode['movie_id'].toString(),
-                movieTitle: episode['movie_title'] ?? episode['title'] ?? '',
               );
             },
           ),
@@ -351,6 +386,139 @@ class _TikTokStylePlayerState extends State<TikTokStylePlayer> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentScreen(Map<String, dynamic> episode, Map<String, dynamic> accessData) {
+    final episodeId = episode['episode_id'] ?? episode['id'];
+    final userBalance = accessData['userBalance'] ?? 0;
+    final requiredCoins = accessData['requiredCoins'] ?? 1;
+    final canUnlock = accessData['canUnlock'] ?? false;
+    
+    return Container(
+      color: Colors.black,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Icône de cadenas
+            Icon(
+              Icons.lock,
+              size: 80,
+              color: Colors.orange,
+            ),
+            const SizedBox(height: 20),
+            
+            // Titre
+            Text(
+              'Épisode ${episode['episode_number']}',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            
+            // Description
+            Text(
+              'Cet épisode nécessite ${requiredCoins} coin(s)',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Solde utilisateur
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.monetization_on, color: Colors.orange, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Votre solde: $userBalance coin(s)',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+            
+            // Bouton de déblocage
+            if (canUnlock)
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await _episodeService.unlockEpisode(episodeId.toString());
+                    // Recharger l'épisode après déblocage
+                    await _loadCurrentEpisode();
+                    setState(() {});
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Erreur lors du déblocage: $e')),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: Text(
+                  'Débloquer pour ${requiredCoins} coin(s)',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              )
+            else
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.red[800],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  'Solde insuffisant',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            
+            const SizedBox(height: 20),
+            
+            // Bouton pour acheter des coins
+            TextButton(
+              onPressed: () {
+                // Navigation vers l'écran d'achat de coins
+                Navigator.pushNamed(context, '/coin-packs');
+              },
+              child: Text(
+                'Acheter des coins',
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 16,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

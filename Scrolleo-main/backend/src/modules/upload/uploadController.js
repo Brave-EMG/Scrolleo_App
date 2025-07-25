@@ -475,6 +475,17 @@ export class UploadController {
                 const videoUpload = await this.createUploadRecord(episodeId, processedFiles.video, 'video');
                 const thumbnailUpload = await this.createUploadRecord(episodeId, processedFiles.thumbnail, 'thumbnail');
                 
+                // Mettre à jour la colonne thumbnail_url dans la table episodes
+                try {
+                    await pool.query(
+                        'UPDATE episodes SET thumbnail_url = $1 WHERE episode_id = $2',
+                        [processedFiles.thumbnail.location, episodeId]
+                    );
+                    console.log(`✅ Thumbnail URL mise à jour pour l'épisode ${episodeId}: ${processedFiles.thumbnail.location}`);
+                } catch (updateError) {
+                    console.error(`❌ Erreur lors de la mise à jour du thumbnail_url pour l'épisode ${episodeId}:`, updateError);
+                }
+                
                 if (processedFiles.subtitles) {
                     await this.createUploadRecord(episodeId, processedFiles.subtitles, 'subtitle');
                 }

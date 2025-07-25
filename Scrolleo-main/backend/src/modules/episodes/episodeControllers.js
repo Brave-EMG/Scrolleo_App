@@ -850,12 +850,24 @@ export class EpisodeController {
                 thumbnailUrl = episodeResult.rows[0].thumbnail_url;
             }
             
-            // Si pas d'URL ou colonne n'existe pas, utiliser une URL par défaut
+            // Si pas d'URL ou colonne n'existe pas, utiliser une image par défaut
             if (!thumbnailUrl) {
-                thumbnailUrl = `https://dm23yf4cycj8r.cloudfront.net/thumbnails/${episodeId}/default-thumbnail.jpg`;
+                // Créer une image par défaut simple (1x1 pixel transparent)
+                const defaultImageBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+                
+                res.set({
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type',
+                    'Cache-Control': 'public, max-age=3600',
+                    'Content-Type': 'image/png',
+                    'Content-Length': defaultImageBuffer.length
+                });
+                
+                return res.send(defaultImageBuffer);
             }
             
-            // Télécharger l'image depuis CloudFront et la servir directement
+            // Télécharger l'image depuis l'URL et la servir directement
             try {
                 const response = await fetch(thumbnailUrl);
                 
@@ -883,32 +895,36 @@ export class EpisodeController {
                 console.error('Erreur lors du téléchargement de l\'image:', fetchError);
                 
                 // En cas d'erreur, retourner une image par défaut
-                const defaultImageUrl = `https://dm23yf4cycj8r.cloudfront.net/thumbnails/${episodeId}/default-thumbnail.jpg`;
+                const defaultImageBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
                 
                 res.set({
                     'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': 'GET, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type',
                     'Cache-Control': 'public, max-age=3600',
-                    'Content-Type': 'image/jpeg'
+                    'Content-Type': 'image/png',
+                    'Content-Length': defaultImageBuffer.length
                 });
                 
-                // Rediriger vers l'image par défaut
-                return res.redirect(defaultImageUrl);
+                return res.send(defaultImageBuffer);
             }
             
         } catch (error) {
             console.error('Erreur lors de la récupération de la miniature:', error);
             
             // En cas d'erreur, retourner une image par défaut
-            const defaultUrl = `https://dm23yf4cycj8r.cloudfront.net/thumbnails/${req.params.episodeId}/default-thumbnail.jpg`;
+            const defaultImageBuffer = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+            
             res.set({
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'GET, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type',
-                'Cache-Control': 'public, max-age=3600'
+                'Cache-Control': 'public, max-age=3600',
+                'Content-Type': 'image/png',
+                'Content-Length': defaultImageBuffer.length
             });
-            return res.redirect(defaultUrl);
+            
+            return res.send(defaultImageBuffer);
         }
     }
 }
